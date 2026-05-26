@@ -461,15 +461,18 @@ const mkCmt=()=>({text:'',status:''});
 
 function mkStack(){
   // Draw order: bottom → top (last drawn = topmost visually)
-  // BG → Frame → Logo → Img3 → Maharaj → Img5 → Text8..Text1 → Date/Day
+  // Stack order as per Excel col order: Img1=Frame (top) … Img8=BG (bottom)
+  // Render bottom→top: BG→Img7→Img6→Img5→Img4(Maharaj)→Img3→Img2(Logo)→Img1(Frame)→Texts→Date/Day
   return[
-    mkIL('Background','img_bg','cover'),
-    mkIL('Frame','img_frame','contain'),
-    mkIL('Logo','img_logo','contain'),
-    mkIL('Image 3','img_3','contain'),
-    mkIL('Maharaj','img_mhj','contain'),
-    mkIL('Image 5','img_5','contain'),
-    // Texts: 8 drawn first (bottom), 1 drawn last (top text) — matches Excel col order in panel
+    mkIL('Background','img_bg','cover'),    // Img8 — bottommost
+    mkIL('Image 7','img_7','contain'),       // Img7 — new
+    mkIL('Image 6','img_6','contain'),       // Img6 — new
+    mkIL('Image 5','img_5','contain'),       // Img5
+    mkIL('Maharaj','img_mhj','contain'),     // Img4
+    mkIL('Image 3','img_3','contain'),       // Img3
+    mkIL('Logo','img_logo','contain'),       // Img2
+    mkIL('Frame','img_frame','contain'),     // Img1 — topmost image layer
+    // Texts: 8 drawn first (bottom), 1 drawn last (top text)
     mkTL('Text 8',8),mkTL('Text 7',7),mkTL('Text 6',6),mkTL('Text 5',5),
     mkTL('Text 4',4),mkTL('Text 3',3),mkTL('Text 2',2),mkTL('Text 1',1),
     mkDD(), // topmost layer
@@ -503,8 +506,32 @@ function loadSave(){
     S.month=d.month??S.month;S.year=d.year??S.year;S.cw=d.cw??DW;S.ch=d.ch??DH;S.zoom=d.zoom??18;
     S.gl=d.gl??mkStack();
     S.canvases=(d.canvases??[]).map(c=>({...c,layers:c.layers??JSON.parse(JSON.stringify(S.gl)),statuses:c.statuses??Array(7).fill(false),comment:c.comment||''}));
+    _migrateStack(S.gl);
+    S.canvases.forEach(c=>_migrateStack(c.layers));
     return true;
   }catch(e){return false}
+}
+// Migrate saved sessions: add missing img_6/img_7 and enforce correct image stack order
+function _migrateStack(layers){
+  if(!layers)return;
+  // Correct image draw order: bottom(index 0) → top(highest index before texts)
+  // BG → img_7 → img_6 → img_5 → img_mhj → img_3 → img_logo → img_frame
+  const IMG_ORDER=['img_bg','img_7','img_6','img_5','img_mhj','img_3','img_logo','img_frame'];
+  const defaults={
+    img_6:mkIL('Image 6','img_6','contain'),
+    img_7:mkIL('Image 7','img_7','contain'),
+  };
+  // Collect existing image layers by id (preserving their saved properties)
+  const byId={};
+  layers.forEach(l=>{ if(IMG_ORDER.includes(l.id)) byId[l.id]=l; });
+  // Fill in any missing image layers with defaults
+  IMG_ORDER.forEach(id=>{ if(!byId[id]) byId[id]=defaults[id]||(()=>{throw new Error('missing default for '+id)})(); });
+  // Remove all image layers from the array (keep texts, dd, unknowns)
+  const nonImg=layers.filter(l=>!IMG_ORDER.includes(l.id));
+  // Put image layers back at the front in correct draw order, then non-image layers
+  layers.length=0;
+  IMG_ORDER.forEach(id=>layers.push(byId[id]));
+  nonImg.forEach(l=>layers.push(l));
 }
 function loadCF(){
   try{const d=JSON.parse(localStorage.getItem(SFK)||'null');if(d)d.forEach(f=>regFont(f,false))}catch(e){}
@@ -1180,8 +1207,8 @@ function handleXL(file){
 function applyXL(data){
   if(!data||data.length<2){toast('No data rows','err');return;}
   pushU();
-  // Image layer ID order matches Excel cols 25-30
-  const IIDS=['img_frame','img_logo','img_3','img_mhj','img_5','img_bg'];
+  // Image layer ID order matches Excel cols 25-32 (Img1_Frame … Img8_BG)
+  const IIDS=['img_frame','img_logo','img_3','img_mhj','img_5','img_6','img_7','img_bg'];
   data.slice(1).forEach(row=>{
     if(!row?.length||!row[0])return;
     const day=+row[0];if(isNaN(day))return;
@@ -1241,11 +1268,11 @@ function applyXL(data){
 // ============================================================
 function expXL(){
   const{month,year}=S;const days=dim(month,year);
-  const hdr=['Date','T1_Text','T1_FontIdx','T1_Color','T2_Text','T2_FontIdx','T2_Color','T3_Text','T3_FontIdx','T3_Color','T4_Text','T4_FontIdx','T4_Color','T5_Text','T5_FontIdx','T5_Color','T6_Text','T6_FontIdx','T6_Color','T7_Text','T7_FontIdx','T7_Color','T8_Text','T8_FontIdx','T8_Color','Img1_Frame','Img2_Logo','Img3','Img4_Maharaj','Img5','Img6_BG'];
+  const hdr=['Date','T1_Text','T1_FontIdx','T1_Color','T2_Text','T2_FontIdx','T2_Color','T3_Text','T3_FontIdx','T3_Color','T4_Text','T4_FontIdx','T4_Color','T5_Text','T5_FontIdx','T5_Color','T6_Text','T6_FontIdx','T6_Color','T7_Text','T7_FontIdx','T7_Color','T8_Text','T8_FontIdx','T8_Color','Img1_Frame','Img2_Logo','Img3','Img4_Maharaj','Img5','Img6','Img7','Img8_BG'];
   const rows=[hdr];const dt=new Date(year,month,1);
   for(let d=1;d<=days;d++){
     dt.setDate(d);
-    rows.push([d,'Day '+d+' Title',4,'#FFD700','Subtitle',1,'#FFFFFF','','','','','','','','','','','','','','','','','','','frame.png','logo.png','image3.png','maharaj.png','image5.png','background.jpg']);
+    rows.push([d,'Day '+d+' Title',4,'#FFD700','Subtitle',1,'#FFFFFF','','','','','','','','','','','','','','','','','','','frame.png','logo.png','image3.png','maharaj.png','image5.png','','','background.jpg']);
   }
   const ws=XLSX.utils.aoa_to_sheet(rows);const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,EM[month]+' '+year);

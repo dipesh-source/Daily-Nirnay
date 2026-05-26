@@ -863,9 +863,12 @@ function _buildOv(){
     if(!layer.vis||!('x' in layer))return;
     const h=layer.h||DH;
     const box=document.createElement('div');
-    box.className='lb'+(li===S.sl?' slb':'')+(layer.locked?' lkb':'');
+    // When a layer is selected, only that box receives pointer events so upper layers don't block editing
+    const isSelected = li===S.sl;
+    const ptrEvt = (S.sl<0||isSelected) ? 'auto' : 'none';
+    box.className='lb'+(isSelected?' slb':'')+(layer.locked?' lkb':'');
     box.dataset.li=li;
-    box.style.cssText=`left:${layer.x*scale}px;top:${layer.y*scale}px;width:${layer.w*scale}px;height:${h*scale}px`;
+    box.style.cssText=`left:${layer.x*scale}px;top:${layer.y*scale}px;width:${layer.w*scale}px;height:${h*scale}px;pointer-events:${ptrEvt}`;
     box.addEventListener('mousedown',e=>{
       if(e.button!==0)return;
       e.stopPropagation();e.preventDefault();

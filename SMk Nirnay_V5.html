@@ -192,6 +192,16 @@ select.ts:focus{border-color:var(--acc)}
 .kd{font-size:9px;color:var(--ts)}
 .kbd{background:var(--bg3);border:1px solid var(--bd);border-radius:2px;padding:1px 4px;font-size:8px;color:var(--tm);font-family:monospace}
 .ibdg{display:inline-flex;align-items:center;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.28);color:var(--acc);padding:2px 7px;border-radius:7px;font-size:9px}
+/* Image Upload Loader */
+#img-loader{position:fixed;inset:0;z-index:9998;background:rgba(8,11,18,.82);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;animation:tIn .2s ease}
+#img-loader.on{display:flex}
+.il-ring{width:56px;height:56px;border-radius:50%;border:3px solid rgba(99,102,241,.18);border-top-color:var(--acc);animation:ilspin .75s linear infinite;flex-shrink:0}
+@keyframes ilspin{to{transform:rotate(360deg)}}
+.il-count{font-size:22px;font-weight:700;color:var(--tp);line-height:1}
+.il-label{font-size:11px;color:var(--ts)}
+.il-file{font-size:9px;color:var(--tm);max-width:240px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.il-bar-wrap{width:220px;height:4px;background:rgba(99,102,241,.15);border-radius:2px;overflow:hidden}
+.il-bar{height:100%;background:linear-gradient(90deg,var(--acc),#a78bfa);border-radius:2px;width:0%;transition:width .18s ease}
 </style>
 </head>
 <body>
@@ -353,6 +363,14 @@ select.ts:focus{border-color:var(--acc)}
 
 <input type="file" id="fij" accept=".json" style="display:none">
 <div id="tc"></div>
+<!-- Image Upload Loader -->
+<div id="img-loader">
+  <div class="il-ring"></div>
+  <div class="il-count" id="il-count">0 / 0</div>
+  <div class="il-label">Uploading images…</div>
+  <div class="il-bar-wrap"><div class="il-bar" id="il-bar"></div></div>
+  <div class="il-file" id="il-file">—</div>
+</div>
 
 <!-- Comment Modal -->
 <div class="mo" id="mcmt">
@@ -1091,12 +1109,47 @@ function updIL(){
   });
 }
 function handleImgs(files){
-  Array.from(files).forEach(f=>{
-    if(!/\.(jpe?g|png)$/i.test(f.name))return;
+  const valid=Array.from(files).filter(f=>/\.(jpe?g|png)$/i.test(f.name));
+  if(!valid.length){toast('No valid JPG/PNG files found','w');return;}
+
+  const loader=document.getElementById('img-loader');
+  const elCount=document.getElementById('il-count');
+  const elBar=document.getElementById('il-bar');
+  const elFile=document.getElementById('il-file');
+  let done=0;const total=valid.length;
+
+  // Called only from async onload/onerror — so count is always accurate
+  const finish=(name)=>{
+    done++;
+    elCount.textContent=done+' / '+total;
+    elBar.style.width=Math.round(done/total*100)+'%';
+    elFile.textContent=name;
+    if(done===total){
+      markAllDirty();updIL();
+      setTimeout(()=>{
+        loader.classList.remove('on');
+        elBar.style.width='0%';
+        elFile.textContent='—';
+        toast(total+' image(s) loaded','ok');
+      },420);
+    }
+  };
+
+  // Show loader immediately with 0/N and first filename
+  elCount.textContent='0 / '+total;
+  elBar.style.width='0%';
+  elFile.textContent=valid[0].name;
+  loader.classList.add('on');
+
+  // Kick off all loads in parallel — each fires finish() when done
+  valid.forEach(f=>{
     const url=URL.createObjectURL(f);S.imgs[f.name]=url;
-    const img=new Image();img.onload=()=>{IC[f.name]=img;markAllDirty()};img.src=url;
+    const img=new Image();
+    img.onload=()=>{IC[f.name]=img;finish(f.name);};
+    img.onerror=()=>{finish(f.name);};
+    img.src=url;
   });
-  updIL();toast(files.length+' image(s) loaded','ok');
+  updIL();
 }
 function applyImgs(){markAllDirty();toast('Images applied','ok');}
 

@@ -461,17 +461,18 @@ const mkCmt=()=>({text:'',status:''});
 
 function mkStack(){
   // Draw order: bottom → top (last drawn = topmost visually)
-  // Stack order as per Excel col order: Img1=Frame (top) … Img8=BG (bottom)
-  // Render bottom→top: BG→Img7→Img6→Img5→Img4(Maharaj)→Img3→Img2(Logo)→Img1(Frame)→Texts→Date/Day
+  // Matches original working design + 2 new layers (Image6, Image7) above Image5
+  // BG → Frame → Logo → Image3 → Maharaj → Image5 → Image6 → Image7 → Texts → Date/Day
+  // Frame sits just above BG as a decorative outer border; figures render on top of it
   return[
-    mkIL('Background','img_bg','cover'),    // Img8 — bottommost
-    mkIL('Image 7','img_7','contain'),       // Img7 — new
-    mkIL('Image 6','img_6','contain'),       // Img6 — new
-    mkIL('Image 5','img_5','contain'),       // Img5
-    mkIL('Maharaj','img_mhj','contain'),     // Img4
-    mkIL('Image 3','img_3','contain'),       // Img3
-    mkIL('Logo','img_logo','contain'),       // Img2
-    mkIL('Frame','img_frame','contain'),     // Img1 — topmost image layer
+    mkIL('Background','img_bg','cover'),    // bottommost — scenic background
+    mkIL('Frame','img_frame','contain'),    // decorative outer border above BG
+    mkIL('Logo','img_logo','contain'),
+    mkIL('Image 3','img_3','contain'),
+    mkIL('Maharaj','img_mhj','contain'),
+    mkIL('Image 5','img_5','contain'),
+    mkIL('Image 6','img_6','contain'),      // new
+    mkIL('Image 7','img_7','contain'),      // new — topmost image layer
     // Texts: 8 drawn first (bottom), 1 drawn last (top text)
     mkTL('Text 8',8),mkTL('Text 7',7),mkTL('Text 6',6),mkTL('Text 5',5),
     mkTL('Text 4',4),mkTL('Text 3',3),mkTL('Text 2',2),mkTL('Text 1',1),
@@ -515,8 +516,9 @@ function loadSave(){
 function _migrateStack(layers){
   if(!layers)return;
   // Correct image draw order: bottom(index 0) → top(highest index before texts)
-  // BG → img_7 → img_6 → img_5 → img_mhj → img_3 → img_logo → img_frame
-  const IMG_ORDER=['img_bg','img_7','img_6','img_5','img_mhj','img_3','img_logo','img_frame'];
+  // BG → Frame → Logo → Image3 → Maharaj → Image5 → Image6 → Image7
+  // Frame is a decorative outer border just above BG; figures render on top
+  const IMG_ORDER=['img_bg','img_frame','img_logo','img_3','img_mhj','img_5','img_6','img_7'];
   const defaults={
     img_6:mkIL('Image 6','img_6','contain'),
     img_7:mkIL('Image 7','img_7','contain'),

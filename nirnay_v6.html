@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;500;600;700&family=Noto+Serif+Gujarati:wght@400;600;700&family=Hind+Vadodara:wght@400;500;600;700&family=Baloo+Bhai+2:wght@400;500;600;700;800&family=Mukta+Vaani:wght@400;500;600;700&family=Rasa:wght@400;500;600;700&family=Shrikhand&family=Mogra&family=Tillana:wght@400;500;600;700&family=Farsan&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@400;600;700&family=Hind:wght@400;500;600;700&family=Baloo+2:wght@400;500;600;700;800&family=Mukta:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=Yatra+One&family=Rozha+One&family=Eczar:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Roboto:wght@400;500;700;900&family=Playfair+Display:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Oswald:wght@400;500;600;700&family=Raleway:wght@400;500;600;700;800&family=Lato:wght@400;700;900&family=Nunito:wght@400;500;600;700;800&family=Bebas+Neue&family=Roboto+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 <style>
   :root{
     --bg0:#060b14;
@@ -633,7 +634,7 @@
 <div id="app">
   <!-- Toolbar -->
   <div class="toolbar">
-    <div class="brand"><span>📅</span> Nirnay <span class="badge">v6</span></div>
+    <div class="brand"><i class="fa-solid fa-calendar-days"></i> Nirnay <span class="badge">v6</span></div>
     <div class="tb-sep"></div>
     <div class="tb-group">
       <select id="monthSel" class="tb-select" title="Month"></select>
@@ -641,19 +642,23 @@
     </div>
     <div class="tb-sep"></div>
     <div class="zoom-ctrl" title="Zoom">
-      <button id="zoomOut">−</button>
+      <button id="zoomOut"><i class="fa-solid fa-minus"></i></button>
       <input type="range" id="zoomSlider" min="5" max="100" value="20" />
-      <button id="zoomIn">+</button>
+      <button id="zoomIn"><i class="fa-solid fa-plus"></i></button>
       <div class="zoom-pct" id="zoomPct">20%</div>
     </div>
     <div class="tb-spacer"></div>
     <div class="tb-group">
-      <button class="tb-btn ghost" id="undoBtn" title="Undo (Ctrl+Z)">↶ Undo</button>
-      <button class="tb-btn ghost" id="redoBtn" title="Redo (Ctrl+Shift+Z)">↷ Redo</button>
+      <button class="tb-btn ghost" id="undoBtn" title="Undo (Ctrl+Z)"><i class="fa-solid fa-rotate-left"></i> Undo</button>
+      <button class="tb-btn ghost" id="redoBtn" title="Redo (Ctrl+Shift+Z)"><i class="fa-solid fa-rotate-right"></i> Redo</button>
       <div class="tb-sep"></div>
-      <button class="tb-btn primary" id="importBtn">⬆ Import</button>
-      <button class="tb-btn" id="exportAllBtn">⬇ Export All</button>
-      <button class="tb-btn" id="exportOneBtn">⬇ Export One</button>
+      <button class="tb-btn primary" id="importBtn"><i class="fa-solid fa-upload"></i> Import</button>
+      <button class="tb-btn" id="exportAllBtn"><i class="fa-solid fa-images"></i> Export All</button>
+      <button class="tb-btn" id="exportOneBtn"><i class="fa-solid fa-image"></i> Export One</button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" id="exportJsonBtn" style="background:rgba(34,197,94,.12);border-color:#22c55e;color:#34d399"><i class="fa-solid fa-floppy-disk"></i> Save JSON</button>
+      <button class="tb-btn" id="importJsonBtn" style="background:rgba(34,197,94,.12);border-color:#22c55e;color:#34d399"><i class="fa-solid fa-folder-open"></i> Load JSON</button>
+      <input type="file" id="jsonFileInput" accept=".json" style="display:none">
     </div>
   </div>
 
@@ -1087,7 +1092,10 @@ function loadFontFromFile(file){
     var ff = new FontFace(family, buf);
     return ff.load().then(function(){
       document.fonts.add(ff);
-      state.customFonts.push({ name: file.name, family: family, fileName: file.name });
+      // Store base64 for JSON export
+      var bytes = new Uint8Array(buf);
+      var bin = ''; bytes.forEach(function(b){ bin += String.fromCharCode(b); });
+      state.customFonts.push({ name: file.name, family: family, fileName: file.name, dataB64: btoa(bin) });
       return family;
     });
   });
@@ -2566,6 +2574,180 @@ $('#exportOneBtn').addEventListener('click', function(){
   if(state.selCanvas < 0){ toast('Select a frame first', 'warn'); return; }
   exportOne(state.selCanvas);
 });
+/* ----------------------------- Image to DataURL ------------------------- */
+function imgToDataURL(img, name, maxW, maxH){
+  return new Promise(function(resolve){
+    if(!img || !img.complete || !img.naturalWidth){ resolve(null); return; }
+    var isPng   = name && /\.png$/i.test(name);
+    var format  = isPng ? 'image/png' : 'image/jpeg';
+    var quality = isPng ? undefined   : 0.88;
+    var w = img.naturalWidth, h = img.naturalHeight;
+    var scale = Math.min(1, maxW / w, maxH / h);
+    var cw = Math.max(1, Math.round(w * scale));
+    var ch = Math.max(1, Math.round(h * scale));
+    var cv = document.createElement('canvas');
+    cv.width = cw; cv.height = ch;
+    var ctx = cv.getContext('2d');
+    // For JPEG fill black so no transparent-edge artefacts.
+    if(!isPng){ ctx.fillStyle = '#000'; ctx.fillRect(0, 0, cw, ch); }
+    ctx.drawImage(img, 0, 0, cw, ch);
+    cv.toBlob(function(blob){
+      if(!blob){ resolve(null); return; }
+      var fr = new FileReader();
+      fr.onload = function(){ resolve(fr.result); };
+      fr.readAsDataURL(blob);
+    }, format, quality);
+  });
+}
+
+/* ----------------------------- JSON Export ----------------------------- */
+function exportJSON(){
+  if(state.canvases.length === 0){ toast('No frames to export', 'warn'); return; }
+  showProgress('Saving JSON', '');
+
+  return (async function(){
+    try{
+      // Compress & embed all images as base64 JPEG data-URLs
+      var imgNames = Object.keys(state.imageCache);
+      var imgs = {};
+      for(var i = 0; i < imgNames.length; i++){
+        var name = imgNames[i];
+        updateProgress(i, imgNames.length + 1, 'Embedding image ' + (i+1) + '/' + imgNames.length + '...', name);
+        var dataUrl = await imgToDataURL(state.imageCache[name], name, 1080, 2160);
+        if(dataUrl) imgs[name] = dataUrl;
+        await sleep(0);
+      }
+
+      updateProgress(imgNames.length, imgNames.length + 1, 'Writing JSON...', '');
+      await sleep(20);
+
+      var payload = {
+        v: 1,
+        month: state.month,
+        year:  state.year,
+        zoom:  state.zoom,
+        customFonts: state.customFonts.map(function(f){
+          return { name: f.name, family: f.family, fileName: f.fileName, dataB64: f.dataB64 || '' };
+        }),
+        imgs: imgs,
+        canvases: state.canvases.map(function(c){
+          return { day: c.day, month: c.month, year: c.year,
+                   layers: JSON.parse(JSON.stringify(c.layers)) };
+        })
+      };
+
+      var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      var a    = document.createElement('a');
+      a.href   = URL.createObjectURL(blob);
+      a.download = 'Nirnay_' + MONTHS_EN[state.month] + '_' + state.year + '.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(a.href);
+
+      hideProgress();
+      toast('JSON saved — ' + imgNames.length + ' images embedded!', 'ok');
+    }catch(err){
+      console.error(err);
+      hideProgress();
+      toast('JSON export failed: ' + err.message, 'err');
+    }
+  })();
+}
+
+/* ----------------------------- JSON Import ----------------------------- */
+function importJSON(file){
+  if(!file) return;
+  showProgress('Loading JSON', '');
+
+  return (async function(){
+    try{
+      updateProgress(0, 3, 'Reading file...', file.name);
+      await sleep(20);
+      var text = await file.text();
+
+      updateProgress(1, 3, 'Parsing JSON...', '');
+      await sleep(20);
+      var d = JSON.parse(text);
+
+      if(!d || !Array.isArray(d.canvases) || d.canvases.length === 0){
+        throw new Error('Invalid or empty JSON file');
+      }
+
+      // Restore custom fonts
+      if(Array.isArray(d.customFonts)){
+        d.customFonts.forEach(function(f){
+          if(!f.dataB64) return;
+          try{
+            var bin = atob(f.dataB64);
+            var buf = new Uint8Array(bin.length);
+            for(var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+            var ff = new FontFace(f.family, buf.buffer);
+            ff.load().then(function(){ document.fonts.add(ff); markDirty('all'); });
+            // Avoid duplicates
+            if(!state.customFonts.find(function(x){ return x.family === f.family; })){
+              state.customFonts.push({ name: f.name, family: f.family,
+                                       fileName: f.fileName, dataB64: f.dataB64 });
+            }
+          }catch(e){ console.warn('Font restore failed:', f.name, e); }
+        });
+      }
+
+      // Restore images
+      updateProgress(2, 3, 'Loading images...', '');
+      await sleep(20);
+      if(d.imgs){
+        var imgNames = Object.keys(d.imgs);
+        var loaded = 0;
+        var total  = imgNames.length;
+        await new Promise(function(resolve){
+          if(total === 0){ resolve(); return; }
+          imgNames.forEach(function(name){
+            var dataUrl = d.imgs[name];
+            if(!dataUrl){ loaded++; if(loaded === total) resolve(); return; }
+            var img = new Image();
+            img.onload = img.onerror = function(){
+              state.imageCache[name] = img.naturalWidth ? img : null;
+              loaded++;
+              if(loaded === total) resolve();
+            };
+            img.src = dataUrl;
+          });
+        });
+      }
+
+      // Restore canvases & settings
+      state.month    = (d.month != null) ? d.month : state.month;
+      state.year     = (d.year  != null) ? d.year  : state.year;
+      state.zoom     = (d.zoom  != null) ? d.zoom  : state.zoom;
+      state.canvases = d.canvases.map(function(c){
+        return { day: c.day, month: c.month, year: c.year, layers: c.layers || [] };
+      });
+      state.selCanvas = 0;
+      state.selLayer  = -1;
+
+      updateProgress(3, 3, 'Rendering...', '');
+      await sleep(20);
+
+      renderAll();
+      setZoom(state.zoom);
+      markDirty('all');
+
+      hideProgress();
+      toast('JSON loaded — ' + state.canvases.length + ' frames restored!', 'ok');
+    }catch(err){
+      console.error(err);
+      hideProgress();
+      toast('JSON import failed: ' + err.message, 'err');
+    }
+  })();
+}
+
+$('#exportJsonBtn').addEventListener('click', exportJSON);
+$('#importJsonBtn').addEventListener('click', function(){ $('#jsonFileInput').click(); });
+$('#jsonFileInput').addEventListener('change', function(e){
+  var f = e.target.files && e.target.files[0];
+  if(f) importJSON(f);
+  e.target.value = '';   // reset so same file can be re-loaded
+});
 
 /* ----------------------------- Month/Year switch ----------------------- */
 $('#monthSel').addEventListener('change', function(e){
@@ -2687,10 +2869,7 @@ gridObserver.observe($('#canvasGrid'), { childList: true });
 /* ----------------------------- Init ------------------------------------ */
 function init(){
   renderToolbar();
-  // Build empty frames for the current month so user sees placeholders
-  // before any CSV/image import.
   buildFrames();
-  // Wait for Google Fonts so initial text renders correctly.
   if(document.fonts && document.fonts.ready){
     document.fonts.ready.then(function(){ markDirty('all'); });
   }

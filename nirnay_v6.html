@@ -525,8 +525,9 @@
     gap:18px;
     align-items:start;
     justify-items:start;
+    padding-right:50px;
   }
-  /* Wrapper allows comment button to live outside the card's overflow:hidden */
+  /* Wrapper allows action strip to live outside the card's overflow:hidden */
   .canvas-card-wrap{
     position:relative;
     width:var(--card-w, 180px);
@@ -762,42 +763,97 @@
 
   .hidden{display:none !important}
 
-  /* ---------- Comment button on canvas card ---------- */
-  /* Comment button — sits on the wrapper, outside the card's overflow:hidden */
-  .canvas-card-wrap .comment-btn{
+  /* ---------- Per-card action strip ---------- */
+  .card-actions{
     position:absolute;
-    top:-10px;right:-10px;
-    width:28px;height:28px;
-    background:var(--bg4);
-    border:2px solid var(--border);
+    top:50%;right:-38px;
+    transform:translateY(-50%);
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    padding:6px 5px;
+    background:rgba(13,20,33,0.92);
+    border:1px solid rgba(99,102,241,0.22);
+    border-radius:20px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .18s cubic-bezier(.4,0,.2,1), transform .18s cubic-bezier(.4,0,.2,1);
+    z-index:20;
+  }
+  .canvas-card-wrap:hover .card-actions,
+  .canvas-card-wrap .card-actions.has-active{
+    opacity:1;
+    pointer-events:auto;
+  }
+  .ca-divider{
+    width:14px;height:1px;
+    background:rgba(99,102,241,0.2);
+    margin:1px 0;
+    flex-shrink:0;
+  }
+  .ca-btn{
+    width:26px;height:26px;
     border-radius:50%;
     display:flex;align-items:center;justify-content:center;
-    color:var(--textM);
     font-size:11px;
-    opacity:0;
-    transition:opacity .15s, background .12s, color .12s, border-color .12s;
-    z-index:10;
-    pointer-events:auto;
+    color:var(--textM);
+    background:transparent;
+    border:none;
     cursor:pointer;
+    transition:color .12s, background .12s, transform .1s;
+    position:relative;
+    flex-shrink:0;
   }
-  .canvas-card-wrap:hover .comment-btn{opacity:1}
-  .canvas-card-wrap .comment-btn.has-comments{
-    opacity:1;
-    background:#f59e0b;
-    border-color:#f59e0b;
-    color:#fff;
+  .ca-btn:hover{
+    color:var(--textP);
+    background:rgba(99,102,241,0.15);
+    transform:scale(1.12);
   }
-  .canvas-card-wrap .comment-btn .cb-count{
+  /* Tooltip */
+  .ca-btn::before{
+    content:attr(data-tip);
     position:absolute;
-    top:-5px;right:-5px;
+    right:calc(100% + 8px);
+    top:50%;transform:translateY(-50%);
+    background:rgba(13,20,33,0.96);
+    border:1px solid rgba(99,102,241,0.25);
+    color:var(--textP);
+    font-size:10px;
+    font-weight:500;
+    white-space:nowrap;
+    padding:4px 8px;
+    border-radius:6px;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .12s;
+    box-shadow:0 2px 8px rgba(0,0,0,0.4);
+    z-index:99;
+  }
+  .ca-btn:hover::before{opacity:1}
+  /* Active states */
+  .ca-btn.active-fav{ color:#f87171; }
+  .ca-btn.active-fav:hover{ background:rgba(248,113,113,0.15); }
+  .ca-btn.active-star{ color:#fbbf24; }
+  .ca-btn.active-star:hover{ background:rgba(251,191,36,0.15); }
+  .ca-btn.active-approve{ color:#34d399; }
+  .ca-btn.active-approve:hover{ background:rgba(52,211,153,0.15); }
+  .ca-btn.active-comment{ color:#f59e0b; }
+  .ca-btn.active-comment:hover{ background:rgba(245,158,11,0.15); }
+  /* Comment count badge */
+  .ca-btn .cb-count{
+    position:absolute;
+    top:-4px;right:-4px;
     background:#ef4444;
     color:#fff;
-    font-size:9px;
+    font-size:8px;
     font-weight:700;
-    width:15px;height:15px;
-    border-radius:50%;
+    min-width:14px;height:14px;
+    border-radius:7px;
+    padding:0 2px;
     display:flex;align-items:center;justify-content:center;
     line-height:1;
+    pointer-events:none;
   }
 
   /* ---------- Comment panel (slide-in from right) ---------- */
@@ -1442,7 +1498,10 @@ function buildFrames(){
       year: state.year,
       data: data,
       layers: layers,
-      comments: []
+      comments: [],
+      favorite: false,
+      starred: false,
+      approved: false
     });
   }
   state.canvases = newCanvases;
@@ -1819,31 +1878,120 @@ function renderCanvasGrid(){
         '<canvas width="' + W + '" height="' + H + '"></canvas>' +
         '<div class="day-badge">' + pad2(c.day) + ' ' + MONTHS_EN[c.month] + '</div>' +
         '<div class="dow-badge">' + GD[wd] + '</div>' +
-        '<button class="dl-btn"><i class="fa-solid fa-download"></i> JPG</button>' +
         '<div class="overlay"></div>';
 
-      var commentBtn = document.createElement('button');
-      commentBtn.className = 'comment-btn' + (hasC ? ' has-comments' : '');
-      commentBtn.title = 'Comments';
-      commentBtn.innerHTML =
-        '<i class="fa-solid fa-comment"></i>' +
+      // Build action strip
+      var isFav      = !!c.favorite;
+      var isStarred  = !!c.starred;
+      var isApproved = !!c.approved;
+      var hasActive  = isFav || isStarred || isApproved || hasC;
+
+      var actions = document.createElement('div');
+      actions.className = 'card-actions' + (hasActive ? ' has-active' : '');
+      actions.id = 'card-actions-' + i;
+
+      // Export JPG
+      var btnExport = document.createElement('button');
+      btnExport.className = 'ca-btn';
+      btnExport.setAttribute('data-tip', 'Export JPG');
+      btnExport.innerHTML = '<i class="fa-solid fa-image"></i>';
+
+      // Comment
+      var btnComment = document.createElement('button');
+      btnComment.className = 'ca-btn' + (hasC ? ' active-comment' : '');
+      btnComment.setAttribute('data-tip', hasC ? cCount + ' Comment' + (cCount !== 1 ? 's' : '') : 'Add Comment');
+      btnComment.id = 'ca-comment-' + i;
+      btnComment.innerHTML = '<i class="fa-solid fa-comment-dots"></i>' +
         (hasC ? '<span class="cb-count">' + cCount + '</span>' : '');
 
+      var div1 = document.createElement('div');
+      div1.className = 'ca-divider';
+
+      // Favorite
+      var btnFav = document.createElement('button');
+      btnFav.className = 'ca-btn' + (isFav ? ' active-fav' : '');
+      btnFav.setAttribute('data-tip', isFav ? 'Unfavorite' : 'Favorite');
+      btnFav.id = 'ca-fav-' + i;
+      btnFav.innerHTML = '<i class="fa-' + (isFav ? 'solid' : 'regular') + ' fa-heart"></i>';
+
+      // Star
+      var btnStar = document.createElement('button');
+      btnStar.className = 'ca-btn' + (isStarred ? ' active-star' : '');
+      btnStar.setAttribute('data-tip', isStarred ? 'Unstar' : 'Star');
+      btnStar.id = 'ca-star-' + i;
+      btnStar.innerHTML = '<i class="fa-' + (isStarred ? 'solid' : 'regular') + ' fa-star"></i>';
+
+      // Approve
+      var btnApprove = document.createElement('button');
+      btnApprove.className = 'ca-btn' + (isApproved ? ' active-approve' : '');
+      btnApprove.setAttribute('data-tip', isApproved ? 'Unapprove' : 'Approve');
+      btnApprove.id = 'ca-approve-' + i;
+      btnApprove.innerHTML = '<i class="fa-solid fa-' + (isApproved ? 'circle-check' : 'check') + '"></i>';
+
+      var div2 = document.createElement('div');
+      div2.className = 'ca-divider';
+
+      // Reset frame
+      var btnReset = document.createElement('button');
+      btnReset.className = 'ca-btn';
+      btnReset.setAttribute('data-tip', 'Reset Frame');
+      btnReset.style.cssText = 'color:#f87171';
+      btnReset.innerHTML = '<i class="fa-solid fa-arrow-rotate-left"></i>';
+
+      actions.appendChild(btnExport);
+      actions.appendChild(btnComment);
+      actions.appendChild(div1);
+      actions.appendChild(btnFav);
+      actions.appendChild(btnStar);
+      actions.appendChild(btnApprove);
+      actions.appendChild(div2);
+      actions.appendChild(btnReset);
+
       wrap.appendChild(card);
-      wrap.appendChild(commentBtn);
+      wrap.appendChild(actions);
       grid.appendChild(wrap);
 
       var overlay = card.querySelector('.overlay');
       overlay.addEventListener('mousedown', function(e){ onCanvasMouseDown(e, i); });
 
-      card.querySelector('.dl-btn').addEventListener('click', function(e){
+      btnExport.addEventListener('click', function(e){
         e.stopPropagation();
         exportOne(i);
       });
 
-      commentBtn.addEventListener('click', function(e){
+      btnComment.addEventListener('click', function(e){
         e.stopPropagation();
         openCommentPanel(i);
+      });
+
+      btnFav.addEventListener('click', function(e){
+        e.stopPropagation();
+        c.favorite = !c.favorite;
+        updateCardActions(i);
+      });
+
+      btnStar.addEventListener('click', function(e){
+        e.stopPropagation();
+        c.starred = !c.starred;
+        updateCardActions(i);
+      });
+
+      btnApprove.addEventListener('click', function(e){
+        e.stopPropagation();
+        c.approved = !c.approved;
+        updateCardActions(i);
+      });
+
+      btnReset.addEventListener('click', function(e){
+        e.stopPropagation();
+        if(!confirm('Reset frame ' + c.day + '? This will restore default layers.')) return;
+        var data = c.data || { date: c.day };
+        var newLayers = defaultLayersForDay(c.day, c.month, c.year, data);
+        c.layers = newLayers;
+        c.favorite = false; c.starred = false; c.approved = false;
+        pushHistory();
+        updateCardActions(i);
+        markDirty(i);
       });
 
       markDirty(i);
@@ -2955,18 +3103,28 @@ function exportJSON(){
       await sleep(20);
 
       var payload = {
-        v: 1,
+        v: 2,
         month: state.month,
         year:  state.year,
         zoom:  state.zoom,
+        selCanvas: state.selCanvas,
+        csvRows: state.csvRows,
         customFonts: state.customFonts.map(function(f){
           return { name: f.name, family: f.family, fileName: f.fileName, dataB64: f.dataB64 || '' };
         }),
         imgs: imgs,
         canvases: state.canvases.map(function(c){
-          return { day: c.day, month: c.month, year: c.year,
-                   layers: JSON.parse(JSON.stringify(c.layers)),
-                   comments: JSON.parse(JSON.stringify(c.comments || [])) };
+          return {
+            day:      c.day,
+            month:    c.month,
+            year:     c.year,
+            data:     JSON.parse(JSON.stringify(c.data || {})),
+            layers:   JSON.parse(JSON.stringify(c.layers)),
+            comments: JSON.parse(JSON.stringify(c.comments || [])),
+            favorite: !!c.favorite,
+            starred:  !!c.starred,
+            approved: !!c.approved
+          };
         })
       };
 
@@ -2978,7 +3136,8 @@ function exportJSON(){
       URL.revokeObjectURL(a.href);
 
       hideProgress();
-      toast('JSON saved — ' + imgNames.length + ' images embedded!', 'ok');
+      var sizeKB = Math.round(JSON.stringify(payload).length / 1024);
+      toast('JSON saved — ' + state.canvases.length + ' frames, ' + imgNames.length + ' image' + (imgNames.length !== 1 ? 's' : '') + ' (' + sizeKB + ' KB)', 'ok');
     }catch(err){
       console.error(err);
       hideProgress();
@@ -2994,11 +3153,11 @@ function importJSON(file){
 
   return (async function(){
     try{
-      updateProgress(0, 3, 'Reading file...', file.name);
+      updateProgress(0, 4, 'Reading file...', file.name);
       await sleep(20);
       var text = await file.text();
 
-      updateProgress(1, 3, 'Parsing JSON...', '');
+      updateProgress(1, 4, 'Parsing JSON...', '');
       await sleep(20);
       var d = JSON.parse(text);
 
@@ -3025,8 +3184,9 @@ function importJSON(file){
         });
       }
 
-      // Restore images
-      updateProgress(2, 3, 'Loading images...', '');
+      // Restore images (clear old cache first to prevent stale entries)
+      state.imageCache = {};
+      updateProgress(2, 4, 'Loading images...', '');
       await sleep(20);
       if(d.imgs){
         var imgNames = Object.keys(d.imgs);
@@ -3041,6 +3201,7 @@ function importJSON(file){
             img.onload = img.onerror = function(){
               state.imageCache[name] = img.naturalWidth ? img : null;
               loaded++;
+              updateProgress(2, 3, 'Loading images ' + loaded + '/' + total + '...', name);
               if(loaded === total) resolve();
             };
             img.src = dataUrl;
@@ -3049,16 +3210,33 @@ function importJSON(file){
       }
 
       // Restore canvases & settings
-      state.month    = (d.month != null) ? d.month : state.month;
-      state.year     = (d.year  != null) ? d.year  : state.year;
-      state.zoom     = (d.zoom  != null) ? d.zoom  : state.zoom;
+      state.month    = (d.month    != null) ? d.month    : state.month;
+      state.year     = (d.year     != null) ? d.year     : state.year;
+      state.zoom     = (d.zoom     != null) ? d.zoom     : state.zoom;
+      state.csvRows  = Array.isArray(d.csvRows) ? d.csvRows : state.csvRows;
       state.canvases = d.canvases.map(function(c){
-        return { day: c.day, month: c.month, year: c.year, layers: c.layers || [], comments: c.comments || [] };
+        return {
+          day:      c.day,
+          month:    c.month,
+          year:     c.year,
+          data:     c.data     || {},
+          layers:   c.layers   || [],
+          comments: c.comments || [],
+          favorite: !!c.favorite,
+          starred:  !!c.starred,
+          approved: !!c.approved
+        };
       });
-      state.selCanvas = 0;
+      state.selCanvas = (d.selCanvas != null && d.selCanvas >= 0 && d.selCanvas < state.canvases.length)
+                        ? d.selCanvas : 0;
       state.selLayer  = -1;
 
-      updateProgress(3, 3, 'Rendering...', '');
+      updateProgress(3, 4, 'Rebuilding history...', '');
+      state.history = []; state.hIndex = -1;
+      pushHistory();
+      await sleep(20);
+
+      updateProgress(4, 4, 'Rendering...', '');
       await sleep(20);
 
       renderAll();
@@ -3066,7 +3244,8 @@ function importJSON(file){
       markDirty('all');
 
       hideProgress();
-      toast('JSON loaded — ' + state.canvases.length + ' frames restored!', 'ok');
+      var imgCount = Object.keys(state.imageCache).length;
+      toast('JSON loaded — ' + state.canvases.length + ' frames, ' + imgCount + ' image' + (imgCount !== 1 ? 's' : '') + ' restored!', 'ok');
     }catch(err){
       console.error(err);
       hideProgress();
@@ -3116,7 +3295,10 @@ function snapshotState(){
         day:c.day, month:c.month, year:c.year,
         data: c.data,
         layers: deepClone(c.layers),
-        comments: deepClone(c.comments || [])
+        comments: deepClone(c.comments || []),
+        favorite: !!c.favorite,
+        starred:  !!c.starred,
+        approved: !!c.approved
       };
     }),
     selCanvas: state.selCanvas,
@@ -3143,7 +3325,10 @@ function applySnap(snap){
       day:c.day, month:c.month, year:c.year,
       data:c.data,
       layers: deepClone(c.layers),
-      comments: deepClone(c.comments || [])
+      comments: deepClone(c.comments || []),
+      favorite: !!c.favorite,
+      starred:  !!c.starred,
+      approved: !!c.approved
     };
   });
   state.selCanvas = snap.selCanvas;
@@ -3312,17 +3497,51 @@ function deleteComment(canvasIdx, ci){
 }
 
 function updateCommentBadge(canvasIdx){
-  var wrap = $('#canvas-card-wrap-' + canvasIdx);
-  if(!wrap) return;
-  var c     = state.canvases[canvasIdx];
-  var count = (c.comments || []).length;
-  var btn   = wrap.querySelector('.comment-btn');
-  if(!btn) return;
-  btn.className = 'comment-btn' + (count > 0 ? ' has-comments' : '');
-  btn.innerHTML =
-    '<i class="fa-solid fa-comment"></i>' +
-    (count > 0 ? '<span class="cb-count">' + count + '</span>' : '');
-  btn.onclick = function(e){ e.stopPropagation(); openCommentPanel(canvasIdx); };
+  updateCardActions(canvasIdx);
+}
+
+function updateCardActions(canvasIdx){
+  var c = state.canvases[canvasIdx];
+  if(!c) return;
+  var actions = $('#card-actions-' + canvasIdx);
+  if(!actions) return;
+
+  var count      = (c.comments || []).length;
+  var isFav      = !!c.favorite;
+  var isStarred  = !!c.starred;
+  var isApproved = !!c.approved;
+  var hasActive  = isFav || isStarred || isApproved || count > 0;
+
+  actions.className = 'card-actions' + (hasActive ? ' has-active' : '');
+
+  var btnComment = $('#ca-comment-' + canvasIdx);
+  if(btnComment){
+    btnComment.className = 'ca-btn' + (count > 0 ? ' active-comment' : '');
+    btnComment.setAttribute('data-tip', count > 0 ? count + ' Comment' + (count !== 1 ? 's' : '') : 'Add Comment');
+    btnComment.innerHTML = '<i class="fa-solid fa-comment-dots"></i>' +
+      (count > 0 ? '<span class="cb-count">' + count + '</span>' : '');
+  }
+
+  var btnFav = $('#ca-fav-' + canvasIdx);
+  if(btnFav){
+    btnFav.className = 'ca-btn' + (isFav ? ' active-fav' : '');
+    btnFav.setAttribute('data-tip', isFav ? 'Unfavorite' : 'Favorite');
+    btnFav.innerHTML = '<i class="fa-' + (isFav ? 'solid' : 'regular') + ' fa-heart"></i>';
+  }
+
+  var btnStar = $('#ca-star-' + canvasIdx);
+  if(btnStar){
+    btnStar.className = 'ca-btn' + (isStarred ? ' active-star' : '');
+    btnStar.setAttribute('data-tip', isStarred ? 'Unstar' : 'Star');
+    btnStar.innerHTML = '<i class="fa-' + (isStarred ? 'solid' : 'regular') + ' fa-star"></i>';
+  }
+
+  var btnApprove = $('#ca-approve-' + canvasIdx);
+  if(btnApprove){
+    btnApprove.className = 'ca-btn' + (isApproved ? ' active-approve' : '');
+    btnApprove.setAttribute('data-tip', isApproved ? 'Unapprove' : 'Approve');
+    btnApprove.innerHTML = '<i class="fa-solid fa-' + (isApproved ? 'circle-check' : 'check') + '"></i>';
+  }
 }
 
 $('#cpCloseBtn').addEventListener('click', closeCommentPanel);

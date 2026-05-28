@@ -398,6 +398,12 @@
     align-items:start;
     justify-items:start;
   }
+  /* Wrapper allows comment button to live outside the card's overflow:hidden */
+  .canvas-card-wrap{
+    position:relative;
+    width:var(--card-w, 180px);
+    flex-shrink:0;
+  }
   .canvas-card{
     position:relative;
     background:var(--bg1);
@@ -405,8 +411,7 @@
     border-radius:8px;
     overflow:hidden;
     transition:border-color .12s, box-shadow .12s;
-    width:var(--card-w, 180px);
-    flex-shrink:0;
+    width:100%;
   }
   .canvas-card.sel{
     border-color:var(--accent);
@@ -630,36 +635,38 @@
   .hidden{display:none !important}
 
   /* ---------- Comment button on canvas card ---------- */
-  .canvas-card .comment-btn{
+  /* Comment button — sits on the wrapper, outside the card's overflow:hidden */
+  .canvas-card-wrap .comment-btn{
     position:absolute;
-    bottom:8px;left:8px;
-    width:30px;height:30px;
-    background:rgba(0,0,0,0.72);
-    border:none;
+    top:-10px;right:-10px;
+    width:28px;height:28px;
+    background:var(--bg4);
+    border:2px solid var(--border);
     border-radius:50%;
     display:flex;align-items:center;justify-content:center;
-    color:rgba(255,255,255,0.6);
-    font-size:12px;
+    color:var(--textM);
+    font-size:11px;
     opacity:0;
-    transition:opacity .15s, background .12s, color .12s;
-    z-index:5;
+    transition:opacity .15s, background .12s, color .12s, border-color .12s;
+    z-index:10;
     pointer-events:auto;
     cursor:pointer;
   }
-  .canvas-card:hover .comment-btn{opacity:1}
-  .canvas-card .comment-btn.has-comments{
+  .canvas-card-wrap:hover .comment-btn{opacity:1}
+  .canvas-card-wrap .comment-btn.has-comments{
     opacity:1;
     background:#f59e0b;
+    border-color:#f59e0b;
     color:#fff;
   }
-  .canvas-card .comment-btn .cb-count{
+  .canvas-card-wrap .comment-btn .cb-count{
     position:absolute;
     top:-5px;right:-5px;
     background:#ef4444;
     color:#fff;
     font-size:9px;
     font-weight:700;
-    width:16px;height:16px;
+    width:15px;height:15px;
     border-radius:50%;
     display:flex;align-items:center;justify-content:center;
     line-height:1;
@@ -1635,24 +1642,36 @@ function renderCanvasGrid(){
       var c = state.canvases[i];
       var dt = new Date(c.year, c.month, c.day);
       var wd = dt.getDay();
+      var cComments = c.comments || [];
+      var cCount    = cComments.length;
+      var hasC      = cCount > 0;
+
+      // Wrapper sits in the grid cell; comment button is a child of wrapper (outside card)
+      var wrap = document.createElement('div');
+      wrap.className = 'canvas-card-wrap';
+      wrap.id = 'canvas-card-wrap-' + i;
+
       var card = document.createElement('div');
       card.className = 'canvas-card' + (i === state.selCanvas ? ' sel' : '');
       card.id = 'canvas-card-' + i;
       card.dataset.idx = i;
-      var cComments = c.comments || [];
-      var cCount    = cComments.length;
-      var hasC      = cCount > 0;
       card.innerHTML =
         '<canvas width="' + W + '" height="' + H + '"></canvas>' +
         '<div class="day-badge">' + pad2(c.day) + ' ' + MONTHS_EN[c.month] + '</div>' +
         '<div class="dow-badge">' + GD[wd] + '</div>' +
         '<button class="dl-btn"><i class="fa-solid fa-download"></i> JPG</button>' +
-        '<button class="comment-btn' + (hasC ? ' has-comments' : '') + '" title="Comments">' +
-          '<i class="fa-solid fa-comment"></i>' +
-          (hasC ? '<span class="cb-count">' + cCount + '</span>' : '') +
-        '</button>' +
         '<div class="overlay"></div>';
-      grid.appendChild(card);
+
+      var commentBtn = document.createElement('button');
+      commentBtn.className = 'comment-btn' + (hasC ? ' has-comments' : '');
+      commentBtn.title = 'Comments';
+      commentBtn.innerHTML =
+        '<i class="fa-solid fa-comment"></i>' +
+        (hasC ? '<span class="cb-count">' + cCount + '</span>' : '');
+
+      wrap.appendChild(card);
+      wrap.appendChild(commentBtn);
+      grid.appendChild(wrap);
 
       var overlay = card.querySelector('.overlay');
       overlay.addEventListener('mousedown', function(e){ onCanvasMouseDown(e, i); });
@@ -1662,7 +1681,7 @@ function renderCanvasGrid(){
         exportOne(i);
       });
 
-      card.querySelector('.comment-btn').addEventListener('click', function(e){
+      commentBtn.addEventListener('click', function(e){
         e.stopPropagation();
         openCommentPanel(i);
       });
@@ -3133,11 +3152,11 @@ function deleteComment(canvasIdx, ci){
 }
 
 function updateCommentBadge(canvasIdx){
-  var card = $('#canvas-card-' + canvasIdx);
-  if(!card) return;
+  var wrap = $('#canvas-card-wrap-' + canvasIdx);
+  if(!wrap) return;
   var c     = state.canvases[canvasIdx];
   var count = (c.comments || []).length;
-  var btn   = card.querySelector('.comment-btn');
+  var btn   = wrap.querySelector('.comment-btn');
   if(!btn) return;
   btn.className = 'comment-btn' + (count > 0 ? ' has-comments' : '');
   btn.innerHTML =

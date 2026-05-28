@@ -1008,6 +1008,39 @@
 </style>
 </head>
 <body>
+<!-- Font warmup: invisible spans force the browser to download all Google Fonts
+     so Canvas ctx.font can use them without silent fallback to sans-serif -->
+<div id="fontWarmup" aria-hidden="true" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;font-size:1px;line-height:1">
+  <span style="font-family:'Noto Sans Gujarati'">a</span>
+  <span style="font-family:'Noto Serif Gujarati'">a</span>
+  <span style="font-family:'Hind Vadodara'">a</span>
+  <span style="font-family:'Baloo Bhai 2'">a</span>
+  <span style="font-family:'Mukta Vaani'">a</span>
+  <span style="font-family:'Rasa'">a</span>
+  <span style="font-family:'Shrikhand'">a</span>
+  <span style="font-family:'Mogra'">a</span>
+  <span style="font-family:'Tillana'">a</span>
+  <span style="font-family:'Farsan'">a</span>
+  <span style="font-family:'Noto Sans Devanagari'">a</span>
+  <span style="font-family:'Noto Serif Devanagari'">a</span>
+  <span style="font-family:'Hind'">a</span>
+  <span style="font-family:'Baloo 2'">a</span>
+  <span style="font-family:'Mukta'">a</span>
+  <span style="font-family:'Poppins'">a</span>
+  <span style="font-family:'Yatra One'">a</span>
+  <span style="font-family:'Rozha One'">a</span>
+  <span style="font-family:'Eczar'">a</span>
+  <span style="font-family:'Inter'">a</span>
+  <span style="font-family:'Roboto'">a</span>
+  <span style="font-family:'Playfair Display'">a</span>
+  <span style="font-family:'Montserrat'">a</span>
+  <span style="font-family:'Oswald'">a</span>
+  <span style="font-family:'Raleway'">a</span>
+  <span style="font-family:'Lato'">a</span>
+  <span style="font-family:'Nunito'">a</span>
+  <span style="font-family:'Bebas Neue'">a</span>
+  <span style="font-family:'Roboto Condensed'">a</span>
+</div>
 <div id="app">
   <!-- Toolbar -->
   <div class="toolbar">
@@ -1229,37 +1262,37 @@ const GD = ['રવિવાર','સોમવાર','મંગળવાર','�
 const GN_DIGITS = '૦૧૨૩૪૫૬૭૮૯';
 
 const BUILTIN_FONTS = [
-  null, // id 0 placeholder
-  'Noto Sans Gujarati',
-  'Noto Serif Gujarati',
-  'Hind Vadodara',
-  'Baloo Bhai 2',
-  'Mukta Vaani',
-  'Rasa',
-  'Shrikhand',
-  'Mogra',
-  'Tillana',
-  'Farsan',
-  'Noto Sans Devanagari',
-  'Noto Serif Devanagari',
-  'Hind',
-  'Baloo 2',
-  'Mukta',
-  'Poppins',
-  'Yatra One',
-  'Rozha One',
-  'Eczar',
-  'Inter',
-  'Roboto',
-  'Poppins',
-  'Playfair Display',
-  'Montserrat',
-  'Oswald',
-  'Raleway',
-  'Lato',
-  'Nunito',
-  'Bebas Neue',
-  'Roboto Condensed'
+  null,                  // id 0 placeholder
+  'Noto Sans Gujarati',  // 1
+  'Noto Serif Gujarati', // 2
+  'Hind Vadodara',       // 3
+  'Baloo Bhai 2',        // 4
+  'Mukta Vaani',         // 5
+  'Rasa',                // 6
+  'Shrikhand',           // 7
+  'Mogra',               // 8
+  'Tillana',             // 9
+  'Farsan',              // 10
+  'Noto Sans Devanagari',// 11
+  'Noto Serif Devanagari',// 12
+  'Hind',                // 13
+  'Baloo 2',             // 14
+  'Mukta',               // 15
+  'Poppins',             // 16
+  'Yatra One',           // 17
+  'Rozha One',           // 18
+  'Eczar',               // 19
+  'Inter',               // 20
+  'Roboto',              // 21
+  'Playfair Display',    // 22  ← fixed (was duplicate Poppins)
+  'Montserrat',          // 23
+  'Oswald',              // 24
+  'Raleway',             // 25
+  'Lato',                // 26
+  'Nunito',              // 27
+  'Bebas Neue',          // 28
+  'Roboto Condensed',    // 29
+  'Poppins'              // 30  ← moved to end to avoid breaking old fontId refs
 ];
 
 /* ----------------------------- State ----------------------------------- */
@@ -2362,14 +2395,40 @@ function renderPropertiesPanel(){
   }
 }
 
+function loadFontThenDirty(fontId, fs, canvasIdx){
+  markDirty(canvasIdx);
+  if(!document.fonts) return;
+  var family = fontString(fontId);
+  var weights = ['400', '700'];
+  var promises = weights.map(function(w){
+    var spec = w + ' ' + (fs || 36) + 'px "' + family + '"';
+    if(document.fonts.check(spec)) return Promise.resolve();
+    return document.fonts.load(spec).catch(function(){});
+  });
+  Promise.all(promises).then(function(){ markDirty(canvasIdx); });
+}
+
 function fontOptionsHTML(selectedId){
-  var opts = [];
-  for(var i = 1; i <= 30; i++){
-    opts.push('<option value="' + i + '" ' + (i==selectedId?'selected':'') + '>' + i + '. ' + BUILTIN_FONTS[i] + '</option>');
+  var opts = ['<optgroup label="── Gujarati / Devanagari ──">'];
+  for(var i = 1; i <= 10; i++){
+    opts.push('<option value="' + i + '" ' + (i==selectedId?'selected':'') + '>' + BUILTIN_FONTS[i] + '</option>');
   }
-  for(var j = 0; j < state.customFonts.length; j++){
-    var id = 31 + j;
-    opts.push('<option value="' + id + '" ' + (id==selectedId?'selected':'') + '>' + id + '. ' + escapeHTML(state.customFonts[j].name) + ' (custom)</option>');
+  opts.push('</optgroup><optgroup label="── Devanagari / Hindi ──">');
+  for(var i = 11; i <= 15; i++){
+    opts.push('<option value="' + i + '" ' + (i==selectedId?'selected':'') + '>' + BUILTIN_FONTS[i] + '</option>');
+  }
+  opts.push('</optgroup><optgroup label="── Latin / English ──">');
+  for(var i = 16; i <= 30; i++){
+    opts.push('<option value="' + i + '" ' + (i==selectedId?'selected':'') + '>' + BUILTIN_FONTS[i] + '</option>');
+  }
+  opts.push('</optgroup>');
+  if(state.customFonts.length > 0){
+    opts.push('<optgroup label="── Custom Fonts ──">');
+    for(var j = 0; j < state.customFonts.length; j++){
+      var id = 31 + j;
+      opts.push('<option value="' + id + '" ' + (id==selectedId?'selected':'') + '>' + escapeHTML(state.customFonts[j].name) + '</option>');
+    }
+    opts.push('</optgroup>');
   }
   return opts.join('');
 }
@@ -2687,7 +2746,7 @@ function wireTextProps(L){
   panel.querySelector('[data-f=text]').addEventListener('change', pushHistory);
   panel.querySelector('[data-f=fontId]').addEventListener('change', function(e){
     L.fontId = parseInt(e.target.value, 10);
-    markDirty(state.selCanvas);
+    loadFontThenDirty(L.fontId, L.fs || 36, state.selCanvas);
     pushHistory();
   });
   panel.querySelector('[data-f=fs]').addEventListener('input', function(e){
@@ -2763,7 +2822,7 @@ function wireDDProps(L){
   }
 
   var fontEl = panel.querySelector('[data-f="dfontId"]');
-  if(fontEl){ fontEl.addEventListener('change', function(e){ L.dfontId = parseInt(e.target.value,10); markDirty(state.selCanvas); pushHistory(); }); }
+  if(fontEl){ fontEl.addEventListener('change', function(e){ L.dfontId = parseInt(e.target.value,10); loadFontThenDirty(L.dfontId, L.dfs||52, state.selCanvas); pushHistory(); }); }
 
   var cb = panel.querySelector('[data-f="dbold"]');
   if(cb){ cb.addEventListener('change', function(e){ L.dbold=e.target.checked; markDirty(state.selCanvas); pushHistory(); }); }
@@ -3561,9 +3620,23 @@ document.addEventListener('keydown', function(e){
 });
 
 /* ----------------------------- Init ------------------------------------ */
+function preloadAllFonts(){
+  if(!document.fonts) return;
+  var spec = '400 36px ';
+  var loaded = 0;
+  var total = BUILTIN_FONTS.length - 1; // skip index 0 (null)
+  function done(){ loaded++; if(loaded >= total) markDirty('all'); }
+  for(var i = 1; i < BUILTIN_FONTS.length; i++){
+    var f = BUILTIN_FONTS[i];
+    if(!f){ done(); continue; }
+    document.fonts.load(spec + '"' + f + '"').then(done, done);
+  }
+}
+
 function init(){
   renderToolbar();
   buildFrames();
+  preloadAllFonts();
   if(document.fonts && document.fonts.ready){
     document.fonts.ready.then(function(){ markDirty('all'); });
   }

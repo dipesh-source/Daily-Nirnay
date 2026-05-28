@@ -1826,12 +1826,17 @@ function markDirty(idx){
   }
 }
 
+var RENDER_BATCH = 3; // max canvases rendered per animation frame
+
 function flushDirty(){
   state.rafQueued = false;
   var idxs = Array.from(state.dirty);
-  state.dirty.clear();
-  for(var k = 0; k < idxs.length; k++){
-    var idx = idxs[k];
+  // Take only the first RENDER_BATCH items; leave the rest for the next frame
+  var batch = idxs.splice(0, RENDER_BATCH);
+  state.dirty = new Set(idxs); // put remaining back
+
+  for(var k = 0; k < batch.length; k++){
+    var idx = batch[k];
     var card = $('#canvas-card-' + idx);
     if(!card) continue;
     var canvas = card.querySelector('canvas');
@@ -1839,6 +1844,12 @@ function flushDirty(){
     var dayData = state.canvases[idx];
     if(!dayData) continue;
     renderFrame(canvas, dayData);
+  }
+
+  // If there are more dirty canvases, schedule another frame
+  if(state.dirty.size > 0){
+    state.rafQueued = true;
+    requestAnimationFrame(flushDirty);
   }
 }
 
@@ -2027,9 +2038,13 @@ function renderCanvasGrid(){
         markDirty(i);
       });
 
-      markDirty(i);
     })(i);
   }
+
+  // Only immediately render the selected canvas.
+  // The IntersectionObserver fires for all in-viewport cards on the next layout tick,
+  // so all visible canvases will lazily re-render without blocking the current frame.
+  if(state.selCanvas >= 0) markDirty(state.selCanvas);
 
   if(state.selCanvas >= 0 && state.selLayer >= 0){
     requestAnimationFrame(function(){ updateSelectionBox(); });
@@ -3623,23 +3638,23 @@ document.addEventListener('keydown', function(e){
 function preloadAllFonts(){
   if(!document.fonts) return;
   var spec = '400 36px ';
-  var loaded = 0;
-  var total = BUILTIN_FONTS.length - 1; // skip index 0 (null)
-  function done(){ loaded++; if(loaded >= total) markDirty('all'); }
+  // Load fonts silently; re-render only the selected canvas when done,
+  // the IO will pick up any others as they scroll into view.
   for(var i = 1; i < BUILTIN_FONTS.length; i++){
     var f = BUILTIN_FONTS[i];
-    if(!f){ done(); continue; }
-    document.fonts.load(spec + '"' + f + '"').then(done, done);
+    if(!f) continue;
+    document.fonts.load(spec + '"' + f + '"').catch(function(){});
   }
+  // After all fonts settle, redraw selected canvas so it uses the real font
+  document.fonts.ready.then(function(){
+    if(state.selCanvas >= 0) markDirty(state.selCanvas);
+  });
 }
 
 function init(){
   renderToolbar();
   buildFrames();
   preloadAllFonts();
-  if(document.fonts && document.fonts.ready){
-    document.fonts.ready.then(function(){ markDirty('all'); });
-  }
 }
 
 init();

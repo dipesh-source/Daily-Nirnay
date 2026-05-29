@@ -484,6 +484,106 @@
     text-align:right;
     font-variant-numeric:tabular-nums;
   }
+  /* Image drop zone in properties panel - Premium */
+  .img-drop-zone{
+    position:relative;
+    width:100%;
+    aspect-ratio:4/3;
+    border:2px dashed var(--border);
+    border-radius:10px;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    gap:6px;
+    cursor:pointer;
+    overflow:hidden;
+    transition:border-color .2s,background .2s,box-shadow .2s;
+    background:var(--bg3);
+    margin-bottom:8px;
+    min-height:100px;
+  }
+  .img-drop-zone:hover,.img-drop-zone.drag-over{
+    border-color:var(--accent);
+    background:rgba(99,102,241,.06);
+    box-shadow:0 0 0 3px rgba(99,102,241,.1);
+  }
+  .img-drop-zone img.idz-preview{
+    position:absolute;inset:0;
+    width:100%;height:100%;
+    object-fit:contain;
+    pointer-events:none;
+    transition:transform .2s;
+  }
+  .img-drop-zone:hover img.idz-preview{transform:scale(1.02)}
+  .img-drop-zone .idz-overlay{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    gap:5px;
+    background:rgba(13,20,33,0.65);
+    backdrop-filter:blur(3px);
+    -webkit-backdrop-filter:blur(3px);
+    opacity:0;
+    transition:opacity .18s;
+    pointer-events:none;
+  }
+  .img-drop-zone:hover .idz-overlay,.img-drop-zone.drag-over .idz-overlay,.img-drop-zone.no-img .idz-overlay{
+    opacity:1;
+  }
+  .idz-icon-wrap{
+    width:38px;height:38px;border-radius:10px;
+    background:var(--accentBg);border:1px solid rgba(129,140,248,.25);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .idz-overlay i{font-size:18px;color:var(--accent)}
+  .idz-overlay span{font-size:10px;color:var(--textS);text-align:center;padding:0 12px;line-height:1.4}
+  .img-fname-row{
+    display:flex;align-items:center;gap:6px;
+    margin-bottom:6px;
+  }
+  .img-fname{
+    flex:1;font-size:11px;color:var(--textS);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    background:var(--bg3);border:1px solid var(--border);
+    border-radius:6px;padding:5px 9px;
+    cursor:default;transition:border-color .12s;
+  }
+  .img-fname:hover{border-color:var(--borderL)}
+  .img-fname.empty{color:var(--textM);font-style:italic}
+  .img-clear-btn{
+    flex-shrink:0;width:24px;height:24px;
+    border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;color:var(--err);
+    background:rgba(248,113,113,.08);
+    border:1px solid rgba(248,113,113,.2);
+    cursor:pointer;
+    transition:background .12s,transform .12s;
+  }
+  .img-clear-btn:hover{background:rgba(248,113,113,.2);transform:scale(1.1)}
+  .img-action-row{
+    display:flex;gap:6px;margin-bottom:2px;
+  }
+  .img-action-btn{
+    flex:1;padding:6px 4px;
+    border-radius:6px;border:1px solid var(--border);
+    background:var(--bg3);
+    color:var(--textS);font-size:11px;font-weight:500;
+    cursor:pointer;text-align:center;
+    display:flex;align-items:center;justify-content:center;gap:5px;
+    transition:background .12s,color .12s,border-color .12s,transform .1s;
+  }
+  .img-action-btn:hover{background:var(--bg4);color:var(--textP);border-color:var(--borderL);transform:translateY(-1px)}
+  .img-action-btn.active{background:var(--accentBg);border-color:var(--accent);color:var(--accent)}
+  .reset-filters-btn{
+    margin-top:4px;
+    width:100%;padding:5px;
+    border-radius:6px;border:1px solid var(--border);
+    background:var(--bg3);color:var(--textM);
+    font-size:11px;cursor:pointer;
+    transition:background .12s,color .12s;
+    display:flex;align-items:center;justify-content:center;gap:5px;
+  }
+  .reset-filters-btn:hover{background:var(--bg4);color:var(--textP)}
   .prop-check{
     display:flex;align-items:center;gap:6px;
     cursor:pointer;
@@ -667,43 +767,157 @@
   }
   .modal-close:hover{background:var(--bg3);color:var(--textP)}
   .modal-body{padding:20px}
-  .drop-zone{
+  /* ---- Premium import drop zone ---- */
+  .idrop-zone{
+    position:relative;border-radius:12px;padding:36px 20px;
+    text-align:center;cursor:pointer;overflow:hidden;
+    margin-bottom:12px;background:var(--bg3);
     border:2px dashed var(--border);
-    border-radius:10px;
-    padding:30px 20px;
-    text-align:center;
-    transition:all .15s;
-    cursor:pointer;
-    margin-bottom:14px;
+    transition:border-color .2s,background .2s;
   }
-  .drop-zone:hover{border-color:var(--accent);background:var(--bg3)}
-  .drop-zone.drag{border-color:var(--accent);background:var(--accentBg)}
-  .drop-zone .ico{font-size:36px;margin-bottom:10px;opacity:.6}
-  .drop-zone h3{font-size:14px;font-weight:600;margin-bottom:4px}
-  .drop-zone p{font-size:12px;color:var(--textS)}
-  .file-stats{
+  .idrop-zone:hover,.idrop-zone.drag{
+    border-color:var(--accent);background:rgba(99,102,241,.07);
+  }
+  .idrop-bg-anim{
+    position:absolute;inset:0;
+    background:radial-gradient(ellipse at 50% 60%,rgba(99,102,241,.18) 0%,transparent 70%);
+    pointer-events:none;opacity:0;transition:opacity .25s;
+  }
+  .idrop-zone.drag .idrop-bg-anim{opacity:1}
+  .idrop-icon-wrap{
+    width:54px;height:54px;border-radius:14px;
+    background:var(--accentBg);
+    border:1px solid rgba(129,140,248,.25);
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;color:var(--accent);
+    margin:0 auto 12px;
+    transition:transform .2s,box-shadow .2s;
+    box-shadow:0 0 0 0 rgba(99,102,241,0);
+  }
+  .idrop-zone:hover .idrop-icon-wrap,.idrop-zone.drag .idrop-icon-wrap{
+    transform:translateY(-3px);
+    box-shadow:0 6px 20px rgba(99,102,241,.25);
+  }
+  .idrop-title{font-size:14px;font-weight:600;color:var(--textP);margin-bottom:3px}
+  .idrop-sub{font-size:12px;color:var(--textS);margin-bottom:6px}
+  .idrop-browse{color:var(--accent);cursor:pointer;border-bottom:1px solid transparent;transition:border-color .15s}
+  .idrop-browse:hover{border-color:var(--accent)}
+  .idrop-accepts{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:10px;color:var(--textM);letter-spacing:.4px;margin-top:2px;
+  }
+  .idrop-tag{
+    background:var(--bg4);border:1px solid var(--border);
+    border-radius:4px;padding:1px 7px;
+    font-weight:600;letter-spacing:.5px;
+  }
+
+  /* Import file sections */
+  .import-sections{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+  .import-section{
+    background:var(--bg3);border:1px solid var(--border);
+    border-radius:10px;overflow:hidden;
+  }
+  .isec-header{
+    padding:7px 12px;
+    display:flex;align-items:center;gap:8px;
+    background:var(--bg4);border-bottom:1px solid var(--border);
+    font-size:12px;font-weight:600;color:var(--textP);
+  }
+  .isec-badge{
+    margin-left:auto;
+    background:var(--accentBg);border:1px solid rgba(129,140,248,.25);
+    color:var(--accent);font-size:10px;font-weight:700;
+    padding:1px 8px;border-radius:20px;min-width:22px;text-align:center;
+  }
+  .isec-body{padding:10px}
+
+  /* File chips (CSV / Font) */
+  .file-chip{
+    display:flex;align-items:center;gap:9px;
+    background:var(--bg4);border:1px solid var(--border);
+    border-radius:8px;padding:8px 10px;
+    transition:border-color .15s;
+  }
+  .file-chip:hover{border-color:var(--borderL)}
+  .file-chip+.file-chip{margin-top:6px}
+  .fchip-icon{
+    width:30px;height:30px;border-radius:7px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;flex-shrink:0;
+  }
+  .fchip-icon.csv{background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.25);color:#34d399}
+  .fchip-icon.font{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.25);color:#fbbf24}
+  .fchip-icon.img{background:rgba(129,140,248,.12);border:1px solid rgba(129,140,248,.25);color:var(--accent)}
+  .fchip-info{flex:1;overflow:hidden}
+  .fchip-name{font-size:12px;font-weight:500;color:var(--textP);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .fchip-meta{font-size:10px;color:var(--textM);margin-top:1px}
+  .fchip-remove{
+    width:22px;height:22px;border-radius:5px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--textM);font-size:11px;cursor:pointer;
+    transition:background .12s,color .12s;
+  }
+  .fchip-remove:hover{background:rgba(248,113,113,.15);color:var(--err)}
+
+  /* Image thumb grid */
+  .img-thumb-grid{
     display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:8px;
-    margin-bottom:14px;
+    grid-template-columns:repeat(auto-fill,minmax(78px,1fr));
+    gap:7px;
   }
-  .file-stat{
-    padding:10px;
-    background:var(--bg3);
-    border:1px solid var(--border);
-    border-radius:6px;
-    text-align:center;
+  .img-thumb-item{
+    position:relative;border-radius:8px;overflow:hidden;
+    border:1px solid var(--border);background:var(--bg4);
+    aspect-ratio:1;cursor:default;
+    transition:border-color .15s,transform .15s;
   }
-  .file-stat .n{font-size:18px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
-  .file-stat .l{font-size:11px;color:var(--textS);margin-top:2px}
+  .img-thumb-item:hover{border-color:var(--borderL);transform:scale(1.03)}
+  .img-thumb-item img{width:100%;height:100%;object-fit:cover;display:block}
+  .itm-overlay{
+    position:absolute;bottom:0;left:0;right:0;
+    background:linear-gradient(to top,rgba(6,11,20,.9) 0%,transparent 60%);
+    padding:4px 5px 5px;
+  }
+  .itm-name{font-size:9px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2}
+  .itm-remove{
+    position:absolute;top:3px;right:3px;
+    width:18px;height:18px;border-radius:4px;
+    background:rgba(6,11,20,.75);backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:9px;cursor:pointer;
+    opacity:0;transition:opacity .12s,background .12s;
+  }
+  .img-thumb-item:hover .itm-remove{opacity:1}
+  .itm-remove:hover{background:rgba(248,113,113,.85)!important}
+
+  /* Import footer */
   .modal-footer{
-    padding:14px 20px;
+    padding:12px 20px;
     border-top:1px solid var(--border);
-    display:flex;justify-content:flex-end;gap:8px;
+    display:flex;align-items:center;justify-content:flex-end;gap:8px;
   }
-  .modal-footer .tb-btn.primary[disabled]{
-    opacity:.5;cursor:not-allowed;
+  .import-footer-summary{
+    flex:1;display:flex;align-items:center;gap:6px;flex-wrap:wrap;
   }
+  .isumm-pill{
+    display:inline-flex;align-items:center;gap:4px;
+    background:var(--bg3);border:1px solid var(--border);
+    border-radius:5px;padding:2px 8px;
+    font-size:10px;color:var(--textS);
+  }
+  .isumm-pill i{font-size:9px}
+  .isumm-pill .sc{font-weight:700;color:var(--textP)}
+  .modal-footer .tb-btn.primary[disabled]{opacity:.5;cursor:not-allowed}
+
+  /* Import tip */
+  .import-tip{
+    display:flex;align-items:flex-start;gap:8px;
+    background:var(--bg3);border:1px solid var(--border);
+    border-radius:8px;padding:10px 12px;
+    font-size:11px;color:var(--textS);line-height:1.5;
+  }
+  .import-tip i{color:var(--inf);margin-top:1px;flex-shrink:0;font-size:12px}
 
   /* ---------- Progress overlay ---------- */
   .progress-overlay{
@@ -1191,39 +1405,82 @@
 
 <!-- Import Modal -->
 <div class="modal-backdrop hidden" id="importModal">
-  <div class="modal">
+  <div class="modal" style="width:560px">
     <div class="modal-header">
-      <h2>Import Files</h2>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:8px;background:var(--accentBg);border:1px solid rgba(129,140,248,.25);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:15px;flex-shrink:0"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+        <div>
+          <h2 style="margin:0">Import Files</h2>
+          <div style="font-size:10px;color:var(--textM);margin-top:1px;letter-spacing:.3px">CSV · IMAGES · FONTS</div>
+        </div>
+      </div>
       <button class="modal-close" id="importClose">×</button>
     </div>
     <div class="modal-body">
-      <div class="drop-zone" id="dropZone">
-        <div class="ico">📁</div>
-        <h3>Drop files here or click to select</h3>
-        <p>CSV data file, image files (.jpg/.png), font files (.ttf/.otf)</p>
-        <input type="file" id="fileInput" multiple accept=".csv,.jpg,.jpeg,.png,.ttf,.otf" style="display:none">
+      <!-- Premium drop zone -->
+      <div class="idrop-zone" id="dropZone">
+        <div class="idrop-bg-anim"></div>
+        <div class="idrop-icon-wrap"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+        <div class="idrop-title">Drop files here</div>
+        <div class="idrop-sub">or <span class="idrop-browse">click to browse</span></div>
+        <div class="idrop-accepts">
+          <span class="idrop-tag">CSV</span>
+          <span style="color:var(--textM)">·</span>
+          <span class="idrop-tag">JPG/PNG</span>
+          <span style="color:var(--textM)">·</span>
+          <span class="idrop-tag">TTF/OTF</span>
+        </div>
+        <input type="file" id="fileInput" multiple accept=".csv,.jpg,.jpeg,.png,.webp,.ttf,.otf" style="display:none">
       </div>
-      <div class="file-stats">
-        <div class="file-stat">
-          <div class="n" id="statCsv">0</div>
-          <div class="l">CSV</div>
+
+      <!-- File preview sections (shown after files dropped) -->
+      <div class="import-sections" id="importSections" style="display:none">
+        <div class="import-section" id="csvSection" style="display:none">
+          <div class="isec-header">
+            <i class="fa-solid fa-file-csv" style="color:#34d399;font-size:13px"></i>
+            <span>CSV Data</span>
+            <span class="isec-badge" id="csvBadge">0</span>
+          </div>
+          <div class="isec-body" id="csvList"></div>
         </div>
-        <div class="file-stat">
-          <div class="n" id="statImg">0</div>
-          <div class="l">Images</div>
+        <div class="import-section" id="imagesSection" style="display:none">
+          <div class="isec-header">
+            <i class="fa-solid fa-images" style="color:var(--accent);font-size:13px"></i>
+            <span>Images</span>
+            <span class="isec-badge" id="imgBadge">0</span>
+          </div>
+          <div class="isec-body" id="imgThumbGrid" style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:5px"></div>
         </div>
-        <div class="file-stat">
-          <div class="n" id="statFont">0</div>
-          <div class="l">Fonts</div>
+        <div class="import-section" id="fontsSection" style="display:none">
+          <div class="isec-header">
+            <i class="fa-solid fa-font" style="color:#fbbf24;font-size:13px"></i>
+            <span>Fonts</span>
+            <span class="isec-badge" id="fontBadge">0</span>
+          </div>
+          <div class="isec-body" id="fontList"></div>
         </div>
       </div>
-      <div style="font-size:11px;color:var(--textM);line-height:1.5;background:var(--bg3);padding:10px 12px;border-radius:6px;">
-        <strong style="color:var(--textS)">Tip:</strong> Select your CSV, all referenced image files, and any custom fonts together. After loading, click "Build Frames" to render the month.
+
+      <!-- Keep legacy stat elements hidden (used by JS) -->
+      <span id="statCsv" style="display:none">0</span>
+      <span id="statImg" style="display:none">0</span>
+      <span id="statFont" style="display:none">0</span>
+
+      <div class="import-tip">
+        <i class="fa-solid fa-circle-info"></i>
+        <span>Select your CSV, all referenced image files, and any custom fonts together. After loading, click <strong style="color:var(--textP)">Build Frames</strong> to render the month.</span>
       </div>
     </div>
     <div class="modal-footer">
+      <div class="import-footer-summary" id="importFooterSummary" style="display:none">
+        <span class="isumm-pill" id="summCsv" style="display:none"><i class="fa-solid fa-file-csv" style="color:#34d399"></i><span class="sc" id="summCsvN">0</span> CSV</span>
+        <span class="isumm-pill" id="summImg" style="display:none"><i class="fa-solid fa-images" style="color:var(--accent)"></i><span class="sc" id="summImgN">0</span> images</span>
+        <span class="isumm-pill" id="summFont" style="display:none"><i class="fa-solid fa-font" style="color:#fbbf24"></i><span class="sc" id="summFontN">0</span> fonts</span>
+      </div>
       <button class="tb-btn" id="importCancel">Cancel</button>
-      <button class="tb-btn primary" id="buildBtn" disabled>Build Frames</button>
+      <button class="tb-btn primary" id="buildBtn" disabled>
+        <i class="fa-solid fa-hammer" style="margin-right:5px"></i>Build Frames
+      </button>
     </div>
   </div>
 </div>
@@ -1704,7 +1961,18 @@ function drawImageLayer(ctx, L, cw, ch){
     dy = y + (h - dh) / 2;
   }
 
-  ctx.drawImage(drawSrc, sx, sy, sw, sh, dx, dy, dw, dh);
+  // Apply flip transforms if needed
+  if(L.flipH || L.flipV){
+    ctx.save();
+    var cx = dx + dw / 2;
+    var cy = dy + dh / 2;
+    ctx.translate(cx, cy);
+    ctx.scale(L.flipH ? -1 : 1, L.flipV ? -1 : 1);
+    ctx.drawImage(drawSrc, sx, sy, sw, sh, -dw/2, -dh/2, dw, dh);
+    ctx.restore();
+  } else {
+    ctx.drawImage(drawSrc, sx, sy, sw, sh, dx, dy, dw, dh);
+  }
 
   if(L.br > 0) ctx.restore();
 }
@@ -2515,29 +2783,64 @@ function shadowHTML(L){
 }
 
 function imgPropsHTML(L){
+  var hasImg = L.src && state.imageCache[L.src] && state.imageCache[L.src].naturalWidth > 0;
+  var img    = hasImg ? state.imageCache[L.src] : null;
+  var fname  = L.src ? L.src : '';
+  // Use data URL src if available for the preview, otherwise fall back to blob/object URL
+  var previewSrc = img ? img.src : '';
+
   return '' +
     '<div class="prop-section">' +
       '<div class="prop-title">Image</div>' +
-      '<div class="prop-row">' +
-        '<span class="prop-label">File</span>' +
-        '<input type="text" class="prop-input" data-f="src" value="' + escapeHTML(L.src||'') + '" placeholder="filename.png">' +
+
+      // Drop zone — shows preview when image is loaded, placeholder when not
+      '<div class="img-drop-zone' + (hasImg ? '' : ' no-img') + '" id="imgDropZone">' +
+        (hasImg && previewSrc ? '<img class="idz-preview" src="' + escapeHTML(previewSrc) + '" alt="">' : '') +
+        '<div class="idz-overlay">' +
+          '<div class="idz-icon-wrap"><i class="fa-solid fa-cloud-arrow-up"></i></div>' +
+          '<span>' + (hasImg ? 'Drop new image or click to change' : 'Drop image here or click to browse') + '</span>' +
+        '</div>' +
       '</div>' +
+
+      // Filename row
+      '<div class="img-fname-row">' +
+        '<div class="img-fname' + (fname ? '' : ' empty') + '" id="imgFnameLbl" title="' + escapeHTML(fname) + '">' +
+          (fname ? escapeHTML(fname) : 'No image assigned') +
+        '</div>' +
+        (fname ? '<button class="img-clear-btn" id="imgClearBtn" title="Remove image"><i class="fa-solid fa-xmark"></i></button>' : '') +
+      '</div>' +
+
+      // Fit + Radius on same row
       '<div class="prop-row">' +
         '<span class="prop-label">Fit</span>' +
         '<select class="prop-select" data-f="fitMode">' +
-          '<option value="cover" '   + (L.fitMode==='cover'?'selected':'')   + '>Cover</option>' +
-          '<option value="contain" ' + (L.fitMode==='contain'?'selected':'') + '>Contain</option>' +
-          '<option value="fill" '    + (L.fitMode==='fill'?'selected':'')    + '>Fill</option>' +
+          '<option value="cover"'    + (L.fitMode==='cover'?'selected':'')    + '>Cover</option>' +
+          '<option value="contain"'  + (L.fitMode==='contain'?'selected':'')  + '>Contain</option>' +
+          '<option value="fill"'     + (L.fitMode==='fill'?'selected':'')     + '>Fill</option>' +
         '</select>' +
       '</div>' +
       '<div class="prop-row">' +
         '<span class="prop-label">Radius</span>' +
-        '<input type="number" class="prop-num" data-f="br" value="' + (L.br||0) + '">' +
+        '<input type="number" class="prop-num" data-f="br" value="' + (L.br||0) + '" min="0" max="540">' +
       '</div>' +
+
+      // Flip buttons
+      '<div class="img-action-row" style="margin-top:6px">' +
+        '<button class="img-action-btn' + (L.flipH ? ' active' : '') + '" id="imgFlipH"><i class="fa-solid fa-left-right"></i> Flip H</button>' +
+        '<button class="img-action-btn' + (L.flipV ? ' active' : '') + '" id="imgFlipV"><i class="fa-solid fa-up-down"></i> Flip V</button>' +
+      '</div>' +
+
+      // Hidden file input for click-to-browse
+      '<input type="file" id="imgFileInput" accept="image/*" style="display:none">' +
     '</div>' +
+
     commonPosSizeHTML(L) +
+
     '<div class="prop-section">' +
-      '<div class="prop-title">Color Filters</div>' +
+      '<div class="prop-title" style="display:flex;align-items:center;justify-content:space-between">' +
+        'Color Filters' +
+        '<button class="reset-filters-btn" id="resetFiltersBtn" style="width:auto;padding:2px 8px;margin:0">Reset</button>' +
+      '</div>' +
       '<div class="prop-row">' +
         '<span class="prop-label">Bright</span>' +
         '<div class="prop-slider-row" style="flex:1">' +
@@ -2564,6 +2867,13 @@ function imgPropsHTML(L){
         '<div class="prop-slider-row" style="flex:1">' +
           '<input type="range" data-f="hue" min="-180" max="180" value="' + (L.hue||0) + '">' +
           '<span class="v">' + (L.hue||0) + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="prop-row">' +
+        '<span class="prop-label">Opacity</span>' +
+        '<div class="prop-slider-row" style="flex:1">' +
+          '<input type="range" data-f="layerOp" min="0" max="100" value="' + (L.op != null ? L.op : 100) + '">' +
+          '<span class="v">' + (L.op != null ? L.op : 100) + '</span>' +
         '</div>' +
       '</div>' +
     '</div>' +
@@ -2737,23 +3047,100 @@ function wireShadow(L){
 }
 
 function wireImgProps(L){
-  var panel = $('#propPanel');
-  panel.querySelector('[data-f=src]').addEventListener('input', function(e){
-    L.src = e.target.value.trim();
-    markDirty(state.selCanvas);
-    renderLayerList();
+  var panel    = $('#propPanel');
+  var dropZone = $('#imgDropZone');
+  var fileInp  = $('#imgFileInput');
+
+  // ── Helper: apply a loaded image to the layer ──
+  function applyImage(file){
+    loadImageFromFile(file).then(function(img){
+      state.imageCache[file.name] = img;
+      L.src = file.name;
+      pushHistory();
+      renderPropertiesPanel(); // rebuild panel to show new preview
+      renderLayerList();
+      markDirty(state.selCanvas);
+    }).catch(function(err){
+      toast('Image load failed: ' + err.message, 'err');
+    });
+  }
+
+  // ── Drop zone: drag over ──
+  dropZone.addEventListener('dragover', function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.add('drag-over');
   });
-  panel.querySelector('[data-f=src]').addEventListener('change', pushHistory);
+  dropZone.addEventListener('dragleave', function(e){
+    e.stopPropagation();
+    dropZone.classList.remove('drag-over');
+  });
+  dropZone.addEventListener('drop', function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('drag-over');
+    var files = e.dataTransfer && e.dataTransfer.files;
+    if(files && files[0] && /image/i.test(files[0].type)){
+      applyImage(files[0]);
+    }
+  });
+
+  // ── Drop zone: click to browse ──
+  dropZone.addEventListener('click', function(){ fileInp.click(); });
+  fileInp.addEventListener('change', function(e){
+    var f = e.target.files && e.target.files[0];
+    if(f) applyImage(f);
+    fileInp.value = '';
+  });
+
+  // ── Clear image button ──
+  var clearBtn = $('#imgClearBtn');
+  if(clearBtn){
+    clearBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      L.src = '';
+      pushHistory();
+      renderPropertiesPanel();
+      renderLayerList();
+      markDirty(state.selCanvas);
+    });
+  }
+
+  // ── Fit mode ──
   panel.querySelector('[data-f=fitMode]').addEventListener('change', function(e){
     L.fitMode = e.target.value;
     markDirty(state.selCanvas);
     pushHistory();
   });
+
+  // ── Border radius ──
   panel.querySelector('[data-f=br]').addEventListener('input', function(e){
     L.br = parseInt(e.target.value, 10) || 0;
     markDirty(state.selCanvas);
   });
   panel.querySelector('[data-f=br]').addEventListener('change', pushHistory);
+
+  // ── Flip H / V ──
+  var flipH = $('#imgFlipH');
+  var flipV = $('#imgFlipV');
+  if(flipH){
+    flipH.addEventListener('click', function(){
+      L.flipH = !L.flipH;
+      flipH.classList.toggle('active', !!L.flipH);
+      markDirty(state.selCanvas);
+      pushHistory();
+    });
+  }
+  if(flipV){
+    flipV.addEventListener('click', function(){
+      L.flipV = !L.flipV;
+      flipV.classList.toggle('active', !!L.flipV);
+      markDirty(state.selCanvas);
+      pushHistory();
+    });
+  }
+
+  // ── Color filters ──
   ['bright','contrast','sat','hue'].forEach(function(f){
     var el = panel.querySelector('[data-f="' + f + '"]');
     if(!el) return;
@@ -2765,6 +3152,38 @@ function wireImgProps(L){
     });
     el.addEventListener('change', pushHistory);
   });
+
+  // ── Opacity slider (inline in image panel) ──
+  var opEl = panel.querySelector('[data-f="layerOp"]');
+  if(opEl){
+    opEl.addEventListener('input', function(e){
+      L.op = parseInt(e.target.value, 10);
+      var v = opEl.parentElement.querySelector('.v');
+      if(v) v.textContent = L.op;
+      // Also sync the global opacity slider
+      var globalOp = $('#opacitySlider');
+      var globalVal = $('#opacityVal');
+      if(globalOp) globalOp.value = L.op;
+      if(globalVal) globalVal.textContent = L.op;
+      markDirty(state.selCanvas);
+    });
+    opEl.addEventListener('change', pushHistory);
+  }
+
+  // ── Reset filters button ──
+  var resetBtn = $('#resetFiltersBtn');
+  if(resetBtn){
+    resetBtn.addEventListener('click', function(){
+      L.bright = 0; L.contrast = 0; L.sat = 0; L.hue = 0;
+      ['bright','contrast','sat','hue'].forEach(function(f){
+        var el = panel.querySelector('[data-f="' + f + '"]');
+        if(el){ el.value = 0; el.parentElement.querySelector('.v').textContent = 0; }
+      });
+      markDirty(state.selCanvas);
+      pushHistory();
+    });
+  }
+
   wirePosSize(L);
   wireShadow(L);
 }
@@ -2926,19 +3345,129 @@ function handleFileList(fileList){
     if(n.indexOf('.csv') === n.length - 4 && n.length >= 4){
       state.pendingFiles.csv = f;
     } else if(n.match(/\.(jpe?g|png|webp|gif)$/)){
-      state.pendingFiles.images.push(f);
+      var alreadyExists = state.pendingFiles.images.some(function(x){ return x.name === f.name; });
+      if(!alreadyExists) state.pendingFiles.images.push(f);
     } else if(n.match(/\.(ttf|otf|woff2?)$/)){
-      state.pendingFiles.fonts.push(f);
+      var fontExists = state.pendingFiles.fonts.some(function(x){ return x.name === f.name; });
+      if(!fontExists) state.pendingFiles.fonts.push(f);
     }
   }
   updateImportStats();
 }
 
+function fmtBytes(b){
+  if(b < 1024) return b + ' B';
+  if(b < 1024*1024) return (b/1024).toFixed(0) + ' KB';
+  return (b/1024/1024).toFixed(1) + ' MB';
+}
+
 function updateImportStats(){
-  $('#statCsv').textContent  = state.pendingFiles.csv ? 1 : 0;
-  $('#statImg').textContent  = state.pendingFiles.images.length;
-  $('#statFont').textContent = state.pendingFiles.fonts.length;
-  var ready = !!state.pendingFiles.csv || state.pendingFiles.images.length > 0;
+  var csv   = state.pendingFiles.csv;
+  var imgs  = state.pendingFiles.images;
+  var fonts = state.pendingFiles.fonts;
+
+  // legacy hidden stats
+  $('#statCsv').textContent  = csv ? 1 : 0;
+  $('#statImg').textContent  = imgs.length;
+  $('#statFont').textContent = fonts.length;
+
+  var hasAny = csv || imgs.length > 0 || fonts.length > 0;
+  var sections = $('#importSections');
+  if(sections) sections.style.display = hasAny ? 'flex' : 'none';
+
+  // CSV section
+  var csvSec = $('#csvSection');
+  var csvList = $('#csvList');
+  if(csvSec && csvList){
+    csvSec.style.display = csv ? 'block' : 'none';
+    if(csv){
+      $('#csvBadge').textContent = '1';
+      csvList.innerHTML = '<div class="file-chip">' +
+        '<div class="fchip-icon csv"><i class="fa-solid fa-file-csv"></i></div>' +
+        '<div class="fchip-info">' +
+          '<div class="fchip-name" title="' + escapeHTML(csv.name) + '">' + escapeHTML(csv.name) + '</div>' +
+          '<div class="fchip-meta">' + fmtBytes(csv.size) + '</div>' +
+        '</div>' +
+        '<button class="fchip-remove" id="rmCsvBtn" title="Remove"><i class="fa-solid fa-xmark"></i></button>' +
+      '</div>';
+      var rmCsv = $('#rmCsvBtn');
+      if(rmCsv) rmCsv.addEventListener('click', function(){
+        state.pendingFiles.csv = null;
+        updateImportStats();
+      });
+    }
+  }
+
+  // Images section — simple filename list, no thumbnails (fast with 40+ files)
+  var imgSec = $('#imagesSection');
+  var grid = $('#imgThumbGrid');
+  if(imgSec && grid){
+    imgSec.style.display = imgs.length > 0 ? 'block' : 'none';
+    if(imgs.length > 0){
+      $('#imgBadge').textContent = imgs.length;
+      var imgListHTML = '';
+      for(var ti = 0; ti < imgs.length; ti++){
+        imgListHTML +=
+          '<div class="file-chip" style="padding:6px 10px">' +
+            '<div class="fchip-icon img"><i class="fa-regular fa-image"></i></div>' +
+            '<div class="fchip-info">' +
+              '<div class="fchip-name" title="' + escapeHTML(imgs[ti].name) + '">' + escapeHTML(imgs[ti].name) + '</div>' +
+              '<div class="fchip-meta">' + fmtBytes(imgs[ti].size) + '</div>' +
+            '</div>' +
+            '<button class="fchip-remove" data-ri="' + ti + '" title="Remove"><i class="fa-solid fa-xmark"></i></button>' +
+          '</div>';
+      }
+      grid.innerHTML = imgListHTML;
+      grid.querySelectorAll('.fchip-remove').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+          e.stopPropagation();
+          var ri = parseInt(this.getAttribute('data-ri'), 10);
+          state.pendingFiles.images.splice(ri, 1);
+          updateImportStats();
+        });
+      });
+    }
+  }
+
+  // Fonts section
+  var fontSec = $('#fontsSection');
+  var fontList = $('#fontList');
+  if(fontSec && fontList){
+    fontSec.style.display = fonts.length > 0 ? 'block' : 'none';
+    if(fonts.length > 0){
+      $('#fontBadge').textContent = fonts.length;
+      var fhtml = '';
+      for(var fi2 = 0; fi2 < fonts.length; fi2++){
+        fhtml += '<div class="file-chip" data-fi="' + fi2 + '">' +
+          '<div class="fchip-icon font"><i class="fa-solid fa-font"></i></div>' +
+          '<div class="fchip-info">' +
+            '<div class="fchip-name" title="' + escapeHTML(fonts[fi2].name) + '">' + escapeHTML(fonts[fi2].name) + '</div>' +
+            '<div class="fchip-meta">' + fmtBytes(fonts[fi2].size) + '</div>' +
+          '</div>' +
+          '<button class="fchip-remove" data-rfi="' + fi2 + '" title="Remove"><i class="fa-solid fa-xmark"></i></button>' +
+        '</div>';
+      }
+      fontList.innerHTML = fhtml;
+      fontList.querySelectorAll('.fchip-remove').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var rfi = parseInt(this.getAttribute('data-rfi'), 10);
+          state.pendingFiles.fonts.splice(rfi, 1);
+          updateImportStats();
+        });
+      });
+    }
+  }
+
+  // Footer summary
+  var footerSumm = $('#importFooterSummary');
+  if(footerSumm){
+    footerSumm.style.display = hasAny ? 'flex' : 'none';
+    var summCsvEl = $('#summCsv'); if(summCsvEl){ summCsvEl.style.display = csv ? 'inline-flex' : 'none'; if(csv) $('#summCsvN').textContent = '1'; }
+    var summImgEl = $('#summImg'); if(summImgEl){ summImgEl.style.display = imgs.length > 0 ? 'inline-flex' : 'none'; if(imgs.length) $('#summImgN').textContent = imgs.length; }
+    var summFontEl = $('#summFont'); if(summFontEl){ summFontEl.style.display = fonts.length > 0 ? 'inline-flex' : 'none'; if(fonts.length) $('#summFontN').textContent = fonts.length; }
+  }
+
+  var ready = !!csv || imgs.length > 0;
   $('#buildBtn').disabled = !ready;
 }
 

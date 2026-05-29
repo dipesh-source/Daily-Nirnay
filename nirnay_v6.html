@@ -3023,15 +3023,15 @@ function shadowHTML(L){
       '</div>' +
       '<div class="prop-row">' +
         '<span class="prop-label">Blur</span>' +
-        '<input type="number" class="prop-num" data-f="shadow_blur" value="' + (sh.blur||0) + '">' +
+        '<div class="prop-slider-row" style="flex:1"><input type="range" data-f="shadow_blur" min="0" max="100" value="' + (sh.blur||0) + '"><input type="number" class="v" min="0" max="100" value="' + (sh.blur||0) + '"></div>' +
       '</div>' +
       '<div class="prop-row">' +
         '<span class="prop-label">Off X</span>' +
-        '<input type="number" class="prop-num" data-f="shadow_ox" value="' + (sh.ox||0) + '">' +
+        '<div class="prop-slider-row" style="flex:1"><input type="range" data-f="shadow_ox" min="-100" max="100" value="' + (sh.ox||0) + '"><input type="number" class="v" min="-100" max="100" value="' + (sh.ox||0) + '"></div>' +
       '</div>' +
       '<div class="prop-row">' +
         '<span class="prop-label">Off Y</span>' +
-        '<input type="number" class="prop-num" data-f="shadow_oy" value="' + (sh.oy||0) + '">' +
+        '<div class="prop-slider-row" style="flex:1"><input type="range" data-f="shadow_oy" min="-100" max="100" value="' + (sh.oy||0) + '"><input type="number" class="v" min="-100" max="100" value="' + (sh.oy||0) + '"></div>' +
       '</div>';
   }
   return '' +
@@ -3299,6 +3299,10 @@ function wireShadow(L){
           var t = panel.querySelector('[data-f="shadow_color_t"]'); if(t) t.value = v;
         } else if(f === 'shadow_color_t'){
           var c = panel.querySelector('[data-f="shadow_color"]'); if(c && /^#[0-9a-fA-F]{6}$/.test(v)) c.value = v;
+        } else {
+          // sync the paired .v number input
+          var numV = el.parentElement && el.parentElement.querySelector('.v');
+          if(numV) numV.value = v;
         }
         markDirty(state.selCanvas);
       });

@@ -237,53 +237,54 @@
 
   /* Zoom control */
   .zoom-ctrl{
-    display:flex;align-items:center;gap:5px;
+    display:flex;align-items:center;gap:6px;
     background:rgba(255,255,255,.04);
-    border:1px solid rgba(99,102,241,.2);
+    border:1px solid rgba(99,102,241,.22);
     border-radius:8px;
-    padding:0 8px;
+    padding:0 10px;
     height:34px;
     transition:border-color .15s;
   }
-  .zoom-ctrl:hover{border-color:rgba(99,102,241,.4)}
+  .zoom-ctrl:hover{border-color:rgba(99,102,241,.45)}
   .zoom-ctrl button{
-    width:20px;height:20px;
-    border-radius:4px;
+    width:22px;height:22px;
+    border-radius:5px;
     display:inline-flex;align-items:center;justify-content:center;
-    color:var(--textM);
-    font-size:11px;
-    transition:all .12s;
+    color:var(--textM);font-size:11px;
+    transition:all .12s;flex-shrink:0;
   }
   .zoom-ctrl button:hover{background:rgba(99,102,241,.2);color:var(--accent)}
+  /* Slider track with live fill via JS */
   .zoom-ctrl input[type=range]{
-    width:80px;
-    -webkit-appearance:none;
-    appearance:none;
-    height:3px;
-    background:rgba(99,102,241,.3);
-    border-radius:2px;
+    width:90px;
+    -webkit-appearance:none;appearance:none;
+    height:4px;
+    background:linear-gradient(to right, var(--accent) var(--zoom-pct,10%), rgba(99,102,241,.25) var(--zoom-pct,10%));
+    border-radius:4px;
+    cursor:pointer;
+    flex-shrink:0;
   }
   .zoom-ctrl input[type=range]::-webkit-slider-thumb{
-    -webkit-appearance:none;
-    appearance:none;
-    width:11px;height:11px;
-    background:var(--accent);
+    -webkit-appearance:none;appearance:none;
+    width:13px;height:13px;
+    background:#fff;
     border-radius:50%;
     cursor:pointer;
-    box-shadow:0 0 0 3px rgba(99,102,241,.2);
+    border:2px solid var(--accent);
+    box-shadow:0 1px 4px rgba(0,0,0,.4);
   }
   .zoom-ctrl input[type=range]::-moz-range-thumb{
-    width:11px;height:11px;background:var(--accent);border-radius:50%;border:none;cursor:pointer;
+    width:13px;height:13px;background:#fff;border-radius:50%;
+    border:2px solid var(--accent);cursor:pointer;
   }
   .zoom-pct{
-    color:var(--textS);
-    font-variant-numeric:tabular-nums;
-    min-width:34px;
-    text-align:right;
-    font-size:11px;
-    font-weight:600;
-    letter-spacing:.3px;
+    color:var(--textS);font-variant-numeric:tabular-nums;
+    min-width:38px;text-align:center;
+    font-size:11px;font-weight:600;letter-spacing:.3px;
+    cursor:pointer;border-radius:4px;padding:2px 4px;
+    transition:background .12s;
   }
+  .zoom-pct:hover{background:rgba(99,102,241,.15);color:var(--accent)}
 
   /* ---------- Main layout ---------- */
   .main{
@@ -689,14 +690,24 @@
   /* ---------- Workspace ---------- */
   .workspace{
     flex:1;
-    overflow:auto;
+    overflow:hidden;
     background-color:var(--bg0);
-    background-image:
-      linear-gradient(var(--bg1) 1px, transparent 1px),
-      linear-gradient(90deg, var(--bg1) 1px, transparent 1px);
-    background-size: 32px 32px;
-    padding:24px;
+    background-image: radial-gradient(circle, rgba(99,102,241,.18) 1px, transparent 1px);
+    background-size: 28px 28px;
     position:relative;
+    cursor:default;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  .workspace.ws-panning{ cursor:grab; }
+  .workspace.ws-panning:active{ cursor:grabbing; }
+  /* Viewport — the transformable inner layer */
+  .ws-viewport{
+    position:absolute;
+    top:0; left:0;
+    transform-origin: 0 0;
+    will-change: transform;
+    min-width: 100%;
   }
   .empty-state{
     position:absolute;
@@ -725,17 +736,19 @@
 
   .canvas-grid{
     display:grid;
-    grid-template-columns: repeat(auto-fill, minmax(var(--card-w, 180px), 1fr));
-    gap:18px;
+    grid-template-columns: repeat(4, var(--card-w, 216px));
+    gap:40px 32px;
     align-items:start;
-    justify-items:start;
-    padding-right:50px;
+    padding:40px 40px 160px 40px;
   }
-  /* Wrapper allows action strip to live outside the card's overflow:hidden */
+  /* Wrapper holds card + action strip below */
   .canvas-card-wrap{
     position:relative;
-    width:var(--card-w, 180px);
+    width:var(--card-w, 216px);
     flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
   }
   .canvas-card{
     position:relative;
@@ -1082,33 +1095,41 @@
   .hidden{display:none !important}
 
   /* ---------- Per-card action strip ---------- */
+  /* Card action bar — horizontal strip below the card */
   .card-actions{
-    position:absolute;
-    top:50%;right:-38px;
-    transform:translateY(-50%);
-    display:flex;flex-direction:column;align-items:center;gap:4px;
-    padding:6px 5px;
-    background:rgba(13,20,33,0.92);
+    position:relative;
+    /* Fixed natural width; transform-origin centers the scale */
+    width:240px;
+    left:50%; transform:translateX(-50%) scale(var(--action-scale,1));
+    transform-origin:top center;
+    /* Collapse the extra layout space when scaled down */
+    margin-bottom:calc(36px * (var(--action-scale,1) - 1));
+    display:flex;flex-direction:row;align-items:center;justify-content:center;gap:4px;
+    padding:5px 6px;
+    background:rgba(13,20,33,0.88);
     border:1px solid rgba(99,102,241,0.22);
-    border-radius:20px;
-    box-shadow:0 4px 20px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04);
+    border-radius:10px;
+    box-shadow:0 2px 12px rgba(0,0,0,0.4);
     backdrop-filter:blur(10px);
     -webkit-backdrop-filter:blur(10px);
-    opacity:1;
     pointer-events:auto;
     z-index:20;
+    box-sizing:border-box;
+    white-space:nowrap;
   }
+  /* Hide action strip when cards are too tiny to interact with */
+  .canvas-grid.zoom-tiny .card-actions{ display:none; }
   .ca-divider{
-    width:14px;height:1px;
-    background:rgba(99,102,241,0.2);
-    margin:1px 0;
+    width:1px;height:16px;
+    background:rgba(99,102,241,0.25);
+    margin:0 1px;
     flex-shrink:0;
   }
   .ca-btn{
-    width:26px;height:26px;
-    border-radius:50%;
+    width:28px;height:28px;
+    border-radius:7px;
     display:flex;align-items:center;justify-content:center;
-    font-size:11px;
+    font-size:12px;
     color:var(--textM);
     background:transparent;
     border:none;
@@ -1119,23 +1140,23 @@
   }
   .ca-btn:hover{
     color:var(--textP);
-    background:rgba(99,102,241,0.15);
-    transform:scale(1.12);
+    background:rgba(99,102,241,0.18);
+    transform:scale(1.1);
   }
-  /* Tooltip */
+  /* Tooltip — appears above since bar is below card */
   .ca-btn::before{
     content:attr(data-tip);
     position:absolute;
-    right:calc(100% + 8px);
-    top:50%;transform:translateY(-50%);
+    bottom:calc(100% + 6px);
+    left:50%;transform:translateX(-50%);
     background:rgba(13,20,33,0.96);
     border:1px solid rgba(99,102,241,0.25);
     color:var(--textP);
     font-size:10px;
     font-weight:500;
     white-space:nowrap;
-    padding:4px 8px;
-    border-radius:6px;
+    padding:3px 7px;
+    border-radius:5px;
     pointer-events:none;
     opacity:0;
     transition:opacity .12s;
@@ -1376,10 +1397,10 @@
 
     <!-- Zoom -->
     <div class="zoom-ctrl">
-      <button id="zoomOut" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
-      <input type="range" id="zoomSlider" min="5" max="100" value="20" />
-      <button id="zoomIn" title="Zoom In"><i class="fa-solid fa-plus"></i></button>
-      <div class="zoom-pct" id="zoomPct">20%</div>
+      <button id="zoomOut" title="Zoom Out (Ctrl+−)"><i class="fa-solid fa-minus"></i></button>
+      <input type="range" id="zoomSlider" min="5" max="200" value="20" />
+      <button id="zoomIn" title="Zoom In (Ctrl++)"><i class="fa-solid fa-plus"></i></button>
+      <div class="zoom-pct" id="zoomPct" title="Reset View (Ctrl+0)" style="cursor:pointer" id="zoomPctBtn">20%</div>
     </div>
 
     <div class="tb-spacer"></div>
@@ -1480,7 +1501,9 @@
         <p>Import a CSV, images, and (optionally) fonts to start building day frames for your month.</p>
         <button class="cta" id="emptyImportBtn">⬆ Import Files</button>
       </div>
-      <div class="canvas-grid" id="canvasGrid"></div>
+      <div class="ws-viewport" id="wsViewport">
+        <div class="canvas-grid" id="canvasGrid"></div>
+      </div>
     </div>
 
     <!-- Right panel: Properties -->
@@ -1673,6 +1696,8 @@ const state = {
   month: new Date().getMonth(),
   year:  new Date().getFullYear(),
   zoom:  20,                       // workspace zoom %
+  panX:  0,                        // viewport pan X (px)
+  panY:  0,                        // viewport pan Y (px)
   canvases: [],                    // [{day, data, layers:[]}, ...]
   csvRows: [],                     // raw csv by day key
   imageCache: {},                  // name -> HTMLImageElement
@@ -2245,6 +2270,7 @@ function renderAll(){
   renderLayerList();
   renderPropertiesPanel();
   updateEmptyState();
+  applyViewport();
 }
 
 function updateEmptyState(){
@@ -2277,6 +2303,8 @@ function renderToolbar(){
 
   $('#zoomSlider').value = state.zoom;
   $('#zoomPct').textContent = state.zoom + '%';
+  updateZoomSliderFill();
+  applyViewport();
 }
 
 function renderCanvasGrid(){
@@ -2284,6 +2312,9 @@ function renderCanvasGrid(){
   grid.innerHTML = '';
   var cardW = Math.round(W * state.zoom / 100);
   grid.style.setProperty('--card-w', cardW + 'px');
+  var actionScale = Math.min(1, cardW / 240);
+  grid.style.setProperty('--action-scale', actionScale.toFixed(3));
+  grid.classList.toggle('zoom-tiny', state.zoom < 15);
 
   for(var i = 0; i < state.canvases.length; i++){
     (function(i){
@@ -4429,20 +4460,128 @@ $('#yearSel').addEventListener('change', function(e){
   buildFrames();
 });
 
-/* ----------------------------- Zoom ------------------------------------ */
-function setZoom(z){
-  state.zoom = clamp(Math.round(z), 5, 100);
-  $('#zoomSlider').value = state.zoom;
-  $('#zoomPct').textContent = state.zoom + '%';
-  var cardW = Math.round(W * state.zoom / 100);
-  $('#canvasGrid').style.setProperty('--card-w', cardW + 'px');
-  // Card widths change via CSS variable; update size + selection box.
-  $$('.canvas-card').forEach(function(card){ card.style.width = cardW + 'px'; });
+/* ----------------------------- Zoom & Pan (Figma-like) ------------------ */
+function applyViewport(){
+  var vp = $('#wsViewport');
+  if(!vp) return;
+  vp.style.transform = 'translate(' + state.panX + 'px,' + state.panY + 'px)';
+  var ws = $('#workspace');
+  ws.style.backgroundPosition = (state.panX % 28) + 'px ' + (state.panY % 28) + 'px';
+}
+
+function updateZoomSliderFill(){
+  var slider = $('#zoomSlider');
+  var pct = ((state.zoom - 5) / (200 - 5)) * 100;
+  slider.style.setProperty('--zoom-pct', pct.toFixed(1) + '%');
+}
+
+function setZoom(z, originX, originY){
+  var oldZoom = state.zoom;
+  var newZoom = clamp(Math.round(z), 5, 200);
+  if(newZoom === oldZoom) return;
+
+  // Zoom toward origin point (cursor) by adjusting pan
+  if(originX != null && originY != null){
+    var ratio = newZoom / oldZoom;
+    state.panX = Math.round(originX - ratio * (originX - state.panX));
+    state.panY = Math.round(originY - ratio * (originY - state.panY));
+  }
+
+  state.zoom = newZoom;
+  $('#zoomSlider').value = newZoom;
+  $('#zoomPct').textContent = newZoom + '%';
+  updateZoomSliderFill();
+
+  var cardW = Math.round(W * newZoom / 100);
+  var grid = $('#canvasGrid');
+  if(grid){
+    grid.style.setProperty('--card-w', cardW + 'px');
+    // Scale action bar to fit card width; bar natural width = 240px
+    var actionScale = Math.min(1, cardW / 240);
+    grid.style.setProperty('--action-scale', actionScale.toFixed(3));
+    grid.classList.toggle('zoom-tiny', newZoom < 15);
+    $$('.canvas-card-wrap').forEach(function(el){ el.style.width = cardW + 'px'; });
+  }
+
+  applyViewport();
   updateSelectionBox();
 }
+
+function setPan(x, y){
+  state.panX = x;
+  state.panY = y;
+  applyViewport();
+}
+
+// ── Wheel: scroll = pan, Ctrl/Cmd+wheel = zoom ──
+$('#workspace').addEventListener('wheel', function(e){
+  e.preventDefault();
+  if(e.ctrlKey || e.metaKey){
+    var ws = $('#workspace');
+    var rect = ws.getBoundingClientRect();
+    var cx = e.clientX - rect.left;
+    var cy = e.clientY - rect.top;
+    var delta = e.deltaY < 0 ? 1 : -1;
+    var step = Math.max(1, Math.round(state.zoom * 0.07));
+    setZoom(state.zoom + delta * step, cx, cy);
+  } else {
+    var mult = e.deltaMode === 1 ? 20 : 1; // LINE mode
+    var dx = e.shiftKey ? e.deltaY * mult : e.deltaX * mult;
+    var dy = e.shiftKey ? 0 : e.deltaY * mult;
+    setPan(state.panX - dx, state.panY - dy);
+  }
+}, { passive: false });
+
+// ── Pan: Space+drag, Middle-drag, or plain left-drag on empty workspace ──
+(function(){
+  var panning = false, lastX = 0, lastY = 0, spaceDown = false;
+  var ws = $('#workspace');
+
+  document.addEventListener('keydown', function(e){
+    if(e.code === 'Space' && !e.target.closest('input,textarea,select')){
+      e.preventDefault();
+      spaceDown = true;
+      ws.classList.add('ws-panning');
+    }
+    if(e.ctrlKey || e.metaKey){
+      if(e.key === '=' || e.key === '+'){ e.preventDefault(); setZoom(state.zoom + 10); }
+      if(e.key === '-'){ e.preventDefault(); setZoom(state.zoom - 10); }
+      if(e.key === '0'){ e.preventDefault(); setZoom(20); resetPan(); }
+    }
+  });
+  document.addEventListener('keyup', function(e){
+    if(e.code === 'Space'){ spaceDown = false; if(!panning) ws.classList.remove('ws-panning'); }
+  });
+
+  ws.addEventListener('mousedown', function(e){
+    // Middle button OR Space+left OR direct drag on workspace background (not a card/button)
+    var onBackground = e.target === ws || e.target === $('#wsViewport') || e.target === $('#canvasGrid');
+    if(e.button === 1 || (e.button === 0 && spaceDown) || (e.button === 0 && onBackground)){
+      e.preventDefault();
+      panning = true;
+      lastX = e.clientX; lastY = e.clientY;
+      ws.classList.add('ws-panning');
+    }
+  });
+  document.addEventListener('mousemove', function(e){
+    if(!panning) return;
+    setPan(state.panX + (e.clientX - lastX), state.panY + (e.clientY - lastY));
+    lastX = e.clientX; lastY = e.clientY;
+  });
+  document.addEventListener('mouseup', function(){
+    if(panning){ panning = false; if(!spaceDown) ws.classList.remove('ws-panning'); }
+  });
+})();
+
+function resetPan(){
+  state.panX = 0; state.panY = 0;
+  applyViewport();
+}
+
 $('#zoomSlider').addEventListener('input', function(e){ setZoom(parseInt(e.target.value, 10)); });
-$('#zoomIn').addEventListener('click', function(){ setZoom(state.zoom + 5); });
-$('#zoomOut').addEventListener('click', function(){ setZoom(state.zoom - 5); });
+$('#zoomIn').addEventListener('click', function(){ setZoom(state.zoom + 10); });
+$('#zoomOut').addEventListener('click', function(){ setZoom(state.zoom - 10); });
+$('#zoomPct').addEventListener('click', function(){ setZoom(20); resetPan(); });
 
 /* ----------------------------- History (undo/redo) --------------------- */
 function snapshotState(){

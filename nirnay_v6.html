@@ -541,12 +541,23 @@
     width:11px;height:11px;background:var(--accent);border-radius:50%;border:none;cursor:pointer;
   }
   .prop-slider-row .v{
-    font-size:11px;
-    color:var(--textS);
-    width:36px;
-    text-align:right;
+    font-size:11px;color:var(--textP);
+    width:46px;flex-shrink:0;
+    text-align:center;
     font-variant-numeric:tabular-nums;
+    background:var(--bg3);
+    border:1px solid var(--border);
+    border-radius:5px;
+    padding:2px 4px;
+    outline:none;
+    -moz-appearance:textfield;
+    appearance:textfield;
+    transition:border-color .12s;
   }
+  .prop-slider-row .v::-webkit-inner-spin-button,
+  .prop-slider-row .v::-webkit-outer-spin-button{ opacity:0; width:0; }
+  .prop-slider-row .v:hover{ border-color:var(--borderL); }
+  .prop-slider-row .v:focus{ border-color:var(--accent); box-shadow:0 0 0 2px rgba(99,102,241,.15); }
   /* Image drop zone in properties panel - Premium */
   .img-drop-zone{
     position:relative;
@@ -1487,7 +1498,7 @@
           <span class="prop-label">Opacity</span>
           <div class="prop-slider-row" style="flex:1">
             <input type="range" id="opacitySlider" min="0" max="100" value="100" />
-            <span class="v" id="opacityVal">100</span>
+            <input type="number" class="v" id="opacityVal" min="0" max="100" value="100">
           </div>
         </div>
       </div>
@@ -2899,13 +2910,13 @@ function renderBlendOpacity(){
   if(state.selCanvas < 0 || state.selLayer < 0){
     $('#blendModeSel').value = 'source-over';
     $('#opacitySlider').value = 100;
-    $('#opacityVal').textContent = '100';
+    $('#opacityVal').value = '100';
     return;
   }
   var L = state.canvases[state.selCanvas].layers[state.selLayer];
   $('#blendModeSel').value = L.bm || 'source-over';
   $('#opacitySlider').value = L.op != null ? L.op : 100;
-  $('#opacityVal').textContent = (L.op != null ? L.op : 100);
+  $('#opacityVal').value = (L.op != null ? L.op : 100);
 }
 
 /* ----------------------------- Properties panel ------------------------ */
@@ -3108,7 +3119,7 @@ function imgPropsHTML(L){
             '<span class="prop-label">' + label + '</span>' +
             '<div class="prop-slider-row" style="flex:1">' +
               '<input type="range" data-f="' + field + '" min="' + min + '" max="' + max + '" value="' + (val||0) + '">' +
-              '<span class="v">' + (val||0) + '</span>' +
+              '<input type="number" class="v" min="' + min + '" max="' + max + '" value="' + (val||0) + '">' +
             '</div>' +
           '</div>';
         }
@@ -3119,11 +3130,11 @@ function imgPropsHTML(L){
                row('Temperature','temp',-100,100,L.temp) +
                row('Vibrance','vibrance',-100,100,L.vibrance) +
                '<div class="prop-row"><span class="prop-label" style="color:#f87171;font-weight:600">R</span>' +
-               '<div class="prop-slider-row" style="flex:1"><input type="range" data-f="rgbR" min="-100" max="100" value="' + (L.rgbR||0) + '"><span class="v">' + (L.rgbR||0) + '</span></div></div>' +
+               '<div class="prop-slider-row" style="flex:1"><input type="range" data-f="rgbR" min="-100" max="100" value="' + (L.rgbR||0) + '"><input type="number" class="v" min="-100" max="100" value="' + (L.rgbR||0) + '"></div></div>' +
                '<div class="prop-row"><span class="prop-label" style="color:#34d399;font-weight:600">G</span>' +
-               '<div class="prop-slider-row" style="flex:1"><input type="range" data-f="rgbG" min="-100" max="100" value="' + (L.rgbG||0) + '"><span class="v">' + (L.rgbG||0) + '</span></div></div>' +
+               '<div class="prop-slider-row" style="flex:1"><input type="range" data-f="rgbG" min="-100" max="100" value="' + (L.rgbG||0) + '"><input type="number" class="v" min="-100" max="100" value="' + (L.rgbG||0) + '"></div></div>' +
                '<div class="prop-row"><span class="prop-label" style="color:#60a5fa;font-weight:600">B</span>' +
-               '<div class="prop-slider-row" style="flex:1"><input type="range" data-f="rgbB" min="-100" max="100" value="' + (L.rgbB||0) + '"><span class="v">' + (L.rgbB||0) + '</span></div></div>' +
+               '<div class="prop-slider-row" style="flex:1"><input type="range" data-f="rgbB" min="-100" max="100" value="' + (L.rgbB||0) + '"><input type="number" class="v" min="-100" max="100" value="' + (L.rgbB||0) + '"></div></div>' +
                row('Opacity','layerOp',0,100,L.op != null ? L.op : 100);
       }()) +
     '</div>' +
@@ -3185,7 +3196,7 @@ function textPropsHTML(L){
         '<span class="prop-label">Line H</span>' +
         '<div class="prop-slider-row" style="flex:1">' +
           '<input type="range" data-f="lh" min="80" max="300" value="' + Math.round((L.lh||1.2)*100) + '">' +
-          '<span class="v">' + (L.lh||1.2).toFixed(2) + '</span>' +
+          '<input type="number" class="v" min="0.80" max="3.00" step="0.01" value="' + (L.lh||1.2).toFixed(2) + '">' +
         '</div>' +
       '</div>' +
     '</div>' +
@@ -3457,7 +3468,7 @@ function wireImgProps(L){
     el.addEventListener('input', function(e){
       L[f] = parseInt(e.target.value, 10) || 0;
       var v = el.parentElement.querySelector('.v');
-      if(v) v.textContent = L[f];
+      if(v) v.value = L[f];
       markDirty(state.selCanvas);
     });
     el.addEventListener('change', pushHistory);
@@ -3469,12 +3480,12 @@ function wireImgProps(L){
     opEl.addEventListener('input', function(e){
       L.op = parseInt(e.target.value, 10);
       var v = opEl.parentElement.querySelector('.v');
-      if(v) v.textContent = L.op;
+      if(v) v.value = L.op;
       // Also sync the global opacity slider
       var globalOp = $('#opacitySlider');
       var globalVal = $('#opacityVal');
       if(globalOp) globalOp.value = L.op;
-      if(globalVal) globalVal.textContent = L.op;
+      if(globalVal) globalVal.value = L.op;
       markDirty(state.selCanvas);
     });
     opEl.addEventListener('change', pushHistory);
@@ -3487,7 +3498,7 @@ function wireImgProps(L){
       ['bright','contrast','sat','hue','temp','vibrance','rgbR','rgbG','rgbB'].forEach(function(f){
         L[f] = 0;
         var el = panel.querySelector('[data-f="' + f + '"]');
-        if(el){ el.value = 0; var v = el.parentElement.querySelector('.v'); if(v) v.textContent = 0; }
+        if(el){ el.value = 0; var v = el.parentElement.querySelector('.v'); if(v) v.value = 0; }
       });
       markDirty(state.selCanvas);
       pushHistory();
@@ -3565,7 +3576,7 @@ function wireTextProps(L){
   var lh = panel.querySelector('[data-f=lh]');
   lh.addEventListener('input', function(e){
     L.lh = parseInt(e.target.value, 10) / 100;
-    lh.parentElement.querySelector('.v').textContent = L.lh.toFixed(2);
+    lh.parentElement.querySelector('.v').value = L.lh.toFixed(2);
     markDirty(state.selCanvas);
   });
   lh.addEventListener('change', pushHistory);
@@ -3616,10 +3627,38 @@ $('#opacitySlider').addEventListener('input', function(e){
   var L = selLayer();
   if(!L) return;
   L.op = parseInt(e.target.value, 10);
-  $('#opacityVal').textContent = L.op;
+  $('#opacityVal').value = L.op;
   markDirty(state.selCanvas);
 });
 $('#opacitySlider').addEventListener('change', pushHistory);
+
+// Global opacity number input → slider sync
+$('#opacityVal').addEventListener('input', function(e){
+  var val = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
+  var L = selLayer();
+  if(!L) return;
+  L.op = val;
+  $('#opacitySlider').value = val;
+  markDirty(state.selCanvas);
+});
+$('#opacityVal').addEventListener('change', pushHistory);
+
+// Universal: typing in a .v number input inside #propPanel syncs paired range slider
+$('#propPanel').addEventListener('input', function(e){
+  if(e.target.tagName !== 'INPUT' || e.target.type !== 'number' || !e.target.classList.contains('v')) return;
+  var numInput = e.target;
+  var row = numInput.parentElement;
+  var range = row.querySelector('input[type="range"]');
+  if(!range) return;
+  var val = parseFloat(numInput.value);
+  if(isNaN(val)) return;
+  var min = parseFloat(range.min || -Infinity);
+  var max = parseFloat(range.max || Infinity);
+  val = Math.max(min, Math.min(max, val));
+  // lh slider stores value*100 internally
+  range.value = range.dataset.f === 'lh' ? Math.round(val * 100) : val;
+  range.dispatchEvent(new Event('input', { bubbles: true }));
+});
 
 /* ----------------------------- Import Modal ---------------------------- */
 var importModal = $('#importModal');

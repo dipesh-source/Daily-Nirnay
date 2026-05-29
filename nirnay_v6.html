@@ -174,6 +174,16 @@
     border-color:rgba(34,197,94,.45);
     color:#86efac;
   }
+  .tb-btn.html-export{
+    background:rgba(249,115,22,.1);
+    border-color:rgba(249,115,22,.25);
+    color:#fb923c;
+  }
+  .tb-btn.html-export:hover{
+    background:rgba(249,115,22,.22);
+    border-color:rgba(249,115,22,.5);
+    color:#fdba74;
+  }
 
   /* Tooltip — icon-only buttons only (not primary which already has a label) */
   .tb-btn:not(.primary)[title]:hover::after{
@@ -588,30 +598,62 @@
   }
   .idz-overlay i{font-size:18px;color:var(--accent)}
   .idz-overlay span{font-size:10px;color:var(--textS);text-align:center;padding:0 12px;line-height:1.4}
-  .img-fname-row{
-    display:flex;align-items:center;gap:6px;
-    margin-bottom:6px;
-  }
-  .img-fname{
-    flex:1;font-size:11px;color:var(--textS);
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  /* ── Image picker (searchable dropdown) ── */
+  .img-picker{position:relative;margin-bottom:6px;}
+  .img-picker-trigger{
+    display:flex;align-items:center;gap:7px;
     background:var(--bg3);border:1px solid var(--border);
-    border-radius:6px;padding:5px 9px;
-    cursor:default;transition:border-color .12s;
+    border-radius:8px;padding:6px 10px;cursor:pointer;
+    transition:border-color .15s,box-shadow .15s;min-height:34px;
   }
-  .img-fname:hover{border-color:var(--borderL)}
-  .img-fname.empty{color:var(--textM);font-style:italic}
-  .img-clear-btn{
-    flex-shrink:0;width:24px;height:24px;
-    border-radius:6px;
+  .img-picker-trigger:hover{border-color:var(--borderL);}
+  .img-picker-trigger.open{border-color:var(--accent);box-shadow:0 0 0 2px rgba(99,102,241,.18);}
+  .ipt-name{flex:1;font-size:11px;color:var(--textP);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ipt-name.empty{color:var(--textM);font-style:italic;}
+  .ipt-clear{
+    flex-shrink:0;width:18px;height:18px;border-radius:4px;
     display:flex;align-items:center;justify-content:center;
-    font-size:11px;color:var(--err);
-    background:rgba(248,113,113,.08);
-    border:1px solid rgba(248,113,113,.2);
-    cursor:pointer;
-    transition:background .12s,transform .12s;
+    font-size:10px;color:var(--err);background:rgba(248,113,113,.1);
+    border:1px solid rgba(248,113,113,.2);cursor:pointer;
+    transition:background .12s;
   }
-  .img-clear-btn:hover{background:rgba(248,113,113,.2);transform:scale(1.1)}
+  .ipt-clear:hover{background:rgba(248,113,113,.25);}
+  .ipt-chevron{font-size:9px;color:var(--textM);flex-shrink:0;transition:transform .15s;}
+  .img-picker.open .ipt-chevron{transform:rotate(180deg);}
+  /* Dropdown panel */
+  .img-picker-drop{
+    position:absolute;top:calc(100% + 4px);left:0;right:0;
+    background:var(--bg2);border:1px solid rgba(99,102,241,.25);
+    border-radius:10px;z-index:9999;
+    box-shadow:0 8px 32px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.04);
+    overflow:hidden;display:none;
+  }
+  .img-picker.open .img-picker-drop{display:block;}
+  .ipd-search-wrap{
+    padding:8px 8px 6px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:6px;
+  }
+  .ipd-search-wrap i{font-size:11px;color:var(--textM);}
+  .ipd-search{
+    flex:1;background:transparent;border:none;outline:none;
+    font-size:11px;color:var(--textP);caret-color:var(--accent);
+  }
+  .ipd-search::placeholder{color:var(--textM);}
+  .ipd-list{max-height:180px;overflow-y:auto;padding:4px;}
+  .ipd-list::-webkit-scrollbar{width:4px;}
+  .ipd-list::-webkit-scrollbar-track{background:transparent;}
+  .ipd-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+  .ipd-item{
+    display:flex;align-items:center;gap:8px;
+    padding:5px 7px;border-radius:6px;cursor:pointer;
+    transition:background .1s;
+  }
+  .ipd-item:hover,.ipd-item.sel{background:var(--accentBg);}
+  .ipd-item.sel .ipd-iname{color:var(--accent);}
+  .ipd-iname{font-size:11px;color:var(--textS);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
+  .ipd-none{padding:14px 10px;text-align:center;font-size:11px;color:var(--textM);}
+  .img-fname-row{display:none;}/* hidden — replaced by img-picker */
+  .img-fname,.img-clear-btn{display:none;}
   .img-action-row{
     display:flex;gap:6px;margin-bottom:2px;
   }
@@ -1052,15 +1094,9 @@
     box-shadow:0 4px 20px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04);
     backdrop-filter:blur(10px);
     -webkit-backdrop-filter:blur(10px);
-    opacity:0;
-    pointer-events:none;
-    transition:opacity .18s cubic-bezier(.4,0,.2,1), transform .18s cubic-bezier(.4,0,.2,1);
-    z-index:20;
-  }
-  .canvas-card-wrap:hover .card-actions,
-  .canvas-card-wrap .card-actions.has-active{
     opacity:1;
     pointer-events:auto;
+    z-index:20;
   }
   .ca-divider{
     width:14px;height:1px;
@@ -1379,6 +1415,13 @@
 
     <div class="tb-sep"></div>
 
+    <!-- HTML Export -->
+    <button class="tb-btn html-export" id="exportHtmlBtn" title="Export Portable HTML (full editor + all images)">
+      <i class="fa-brands fa-html5"></i>
+    </button>
+
+    <div class="tb-sep"></div>
+
     <!-- Sample CSV -->
     <button class="tb-btn csv-sample" id="sampleCsvBtn" title="Download Sample CSV">
       <i class="fa-solid fa-file-csv"></i>
@@ -1574,6 +1617,10 @@
    Nirnay v6 - Gujarati Calendar Post Creator
    Single-file HTML5 app. No build step.
    ========================================================================= */
+
+/* Capture pristine DOM here — main <script> is in the DOM,
+   but #canvasGrid is still empty and no state has been set. */
+window.__NIRNAY_CLEAN_SOURCE__ = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 
 'use strict';
 
@@ -2927,13 +2974,23 @@ function imgPropsHTML(L){
         '</div>' +
       '</div>' +
 
-      // Filename row
-      '<div class="img-fname-row">' +
-        '<div class="img-fname' + (fname ? '' : ' empty') + '" id="imgFnameLbl" title="' + escapeHTML(fname) + '">' +
-          (fname ? escapeHTML(fname) : 'No image assigned') +
-        '</div>' +
-        (fname ? '<button class="img-clear-btn" id="imgClearBtn" title="Remove image"><i class="fa-solid fa-xmark"></i></button>' : '') +
-      '</div>' +
+      // Searchable image picker
+      (function(){
+        var hasImg2 = hasImg;
+        var nameText = fname ? escapeHTML(fname) : 'Select image…';
+        return '<div class="img-picker" id="imgPicker">' +
+          '<div class="img-picker-trigger" id="imgPickerTrigger">' +
+            '<i class="fa-regular fa-image" style="font-size:11px;color:var(--textM);flex-shrink:0"></i>' +
+            '<span class="ipt-name' + (fname ? '' : ' empty') + '" id="iptName">' + nameText + '</span>' +
+            (fname ? '<span class="ipt-clear" id="iptClear" title="Remove image"><i class="fa-solid fa-xmark"></i></span>' : '') +
+            '<i class="fa-solid fa-chevron-down ipt-chevron"></i>' +
+          '</div>' +
+          '<div class="img-picker-drop" id="imgPickerDrop">' +
+            '<div class="ipd-search-wrap"><i class="fa-solid fa-magnifying-glass"></i><input class="ipd-search" id="ipdSearch" placeholder="Search images…" autocomplete="off"></div>' +
+            '<div class="ipd-list" id="ipdList"></div>' +
+          '</div>' +
+        '</div>';
+      }()) +
 
       // Fit + Radius on same row
       '<div class="prop-row">' +
@@ -3182,7 +3239,7 @@ function wireImgProps(L){
       state.imageCache[file.name] = img;
       L.src = file.name;
       pushHistory();
-      renderPropertiesPanel(); // rebuild panel to show new preview
+      renderPropertiesPanel();
       renderLayerList();
       markDirty(state.selCanvas);
     }).catch(function(err){
@@ -3190,27 +3247,14 @@ function wireImgProps(L){
     });
   }
 
-  // ── Drop zone: drag over ──
-  dropZone.addEventListener('dragover', function(e){
-    e.preventDefault();
-    e.stopPropagation();
-    dropZone.classList.add('drag-over');
-  });
-  dropZone.addEventListener('dragleave', function(e){
-    e.stopPropagation();
-    dropZone.classList.remove('drag-over');
-  });
+  // ── Drop zone ──
+  dropZone.addEventListener('dragover', function(e){ e.preventDefault(); e.stopPropagation(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', function(e){ e.stopPropagation(); dropZone.classList.remove('drag-over'); });
   dropZone.addEventListener('drop', function(e){
-    e.preventDefault();
-    e.stopPropagation();
-    dropZone.classList.remove('drag-over');
+    e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('drag-over');
     var files = e.dataTransfer && e.dataTransfer.files;
-    if(files && files[0] && /image/i.test(files[0].type)){
-      applyImage(files[0]);
-    }
+    if(files && files[0] && /image/i.test(files[0].type)) applyImage(files[0]);
   });
-
-  // ── Drop zone: click to browse ──
   dropZone.addEventListener('click', function(){ fileInp.click(); });
   fileInp.addEventListener('change', function(e){
     var f = e.target.files && e.target.files[0];
@@ -3218,10 +3262,83 @@ function wireImgProps(L){
     fileInp.value = '';
   });
 
-  // ── Clear image button ──
-  var clearBtn = $('#imgClearBtn');
-  if(clearBtn){
-    clearBtn.addEventListener('click', function(e){
+  // ── Searchable image picker ──
+  var picker  = $('#imgPicker');
+  var trigger = $('#imgPickerTrigger');
+  var drop    = $('#imgPickerDrop');
+  var search  = $('#ipdSearch');
+  var list    = $('#ipdList');
+  var iptClear = $('#iptClear');
+
+  function imgNames(){
+    return Object.keys(state.imageCache).filter(function(n){
+      return state.imageCache[n] && state.imageCache[n].naturalWidth > 0;
+    }).sort(function(a,b){ return a.toLowerCase().localeCompare(b.toLowerCase()); });
+  }
+
+  function renderPickerList(query){
+    var names = imgNames();
+    var q = (query || '').toLowerCase().trim();
+    var filtered = q ? names.filter(function(n){ return n.toLowerCase().indexOf(q) >= 0; }) : names;
+    if(!filtered.length){
+      list.innerHTML = '<div class="ipd-none">' + (names.length ? 'No match' : 'No images imported') + '</div>';
+      return;
+    }
+    list.innerHTML = '';
+    filtered.forEach(function(name){
+      var isCurrent = name === L.src;
+      var item = document.createElement('div');
+      item.className = 'ipd-item' + (isCurrent ? ' sel' : '');
+      item.dataset.name = name;
+      item.innerHTML = '<span class="ipd-iname" title="' + escapeHTML(name) + '">' + escapeHTML(name) + '</span>' +
+        (isCurrent ? '<i class="fa-solid fa-check" style="font-size:9px;color:var(--accent);flex-shrink:0"></i>' : '');
+      item.addEventListener('mousedown', function(e){
+        e.preventDefault();
+        closePicker();
+        if(name !== L.src){
+          L.src = name;
+          pushHistory();
+          renderPropertiesPanel();
+          renderLayerList();
+          markDirty(state.selCanvas);
+        }
+      });
+      list.appendChild(item);
+    });
+  }
+
+  function openPicker(){
+    picker.classList.add('open');
+    trigger.classList.add('open');
+    renderPickerList('');
+    search.value = '';
+    search.focus();
+  }
+  function closePicker(){
+    picker.classList.remove('open');
+    trigger.classList.remove('open');
+  }
+
+  trigger.addEventListener('click', function(e){
+    if(iptClear && iptClear.contains(e.target)) return;
+    picker.classList.contains('open') ? closePicker() : openPicker();
+  });
+
+  search.addEventListener('input', function(){ renderPickerList(search.value); });
+  search.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){ e.stopPropagation(); closePicker(); }
+  });
+
+  // Close when clicking outside
+  document.addEventListener('mousedown', function onOutside(e){
+    if(!picker.contains(e.target)){
+      closePicker();
+      document.removeEventListener('mousedown', onOutside);
+    }
+  });
+
+  if(iptClear){
+    iptClear.addEventListener('click', function(e){
       e.stopPropagation();
       L.src = '';
       pushHistory();
@@ -3826,6 +3943,184 @@ function imgToDataURL(img, name, maxW, maxH){
   });
 }
 
+/* ----------------------------- Portable HTML Export -------------------- */
+function exportPortableHTML(){
+  if(state.canvases.length === 0){ toast('No frames to export', 'warn'); return; }
+  showProgress('Building Portable HTML', '');
+
+  return (async function(){
+    try{
+      // Embed all images as base64 JPEG
+      var imgNames = Object.keys(state.imageCache);
+      var imgs = {};
+      for(var i = 0; i < imgNames.length; i++){
+        var name = imgNames[i];
+        updateProgress(i, imgNames.length + 1, 'Embedding image ' + (i+1) + '/' + imgNames.length + '...', name);
+        var dataUrl = await imgToDataURL(state.imageCache[name], name, 1080, 2160);
+        if(dataUrl) imgs[name] = dataUrl;
+        await sleep(0);
+      }
+
+      updateProgress(imgNames.length, imgNames.length + 1, 'Building portable HTML...', '');
+      await sleep(30);
+
+      // Build full state payload (same schema as JSON export v3)
+      var portableData = {
+        v: 3,
+        month:     state.month,
+        year:      state.year,
+        zoom:      state.zoom,
+        selCanvas: state.selCanvas,
+        selLayer:  state.selLayer,
+        csvRows:   state.csvRows,
+        customFonts: state.customFonts.map(function(f){
+          return { name: f.name, family: f.family, fileName: f.fileName, dataB64: f.dataB64 || '' };
+        }),
+        imgs: imgs,
+        canvases: state.canvases.map(function(c){
+          return {
+            day:      c.day,
+            month:    c.month,
+            year:     c.year,
+            data:     JSON.parse(JSON.stringify(c.data || {})),
+            layers:   JSON.parse(JSON.stringify(c.layers)).map(sanitizeLayer),
+            comments: JSON.parse(JSON.stringify(c.comments || [])),
+            favorite: !!c.favorite,
+            starred:  !!c.starred,
+            approved: !!c.approved
+          };
+        })
+      };
+
+      // Use the pristine DOM snapshot captured at startup (empty grid, no baked state)
+      var appHTML = window.__NIRNAY_CLEAN_SOURCE__ || ('<!DOCTYPE html>\n' + document.documentElement.outerHTML);
+
+      // Strip the clean-source capture line (portable doesn't re-capture at startup)
+      appHTML = appHTML.replace(/\/\* Capture pristine DOM[\s\S]*?document\.documentElement\.outerHTML;\n?/, '');
+
+      // Strip any previously injected portable data block (re-export safety)
+      appHTML = appHTML.replace(/<script id="__nirnay_portable__"[\s\S]*?<\/script>\n?/, '');
+
+      // Inject portable data right after <head>
+      var dataScript = '<script id="__nirnay_portable__">window.__NIRNAY_PORTABLE__=' +
+                       JSON.stringify(portableData) + ';<\/script>\n';
+      appHTML = appHTML.replace(/<head>/, '<head>\n' + dataScript);
+
+      // Update the title
+      var mFull = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      appHTML = appHTML.replace(/<title>[^<]*<\/title>/, '<title>Nirnay — ' + mFull[state.month] + ' ' + state.year + ' (Portable)</title>');
+
+      var blob = new Blob([appHTML], { type: 'text/html;charset=utf-8' });
+      var a    = document.createElement('a');
+      a.href   = URL.createObjectURL(blob);
+      a.download = 'Nirnay_Portable_' + MONTHS_EN[state.month] + '_' + state.year + '.html';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(a.href);
+
+      hideProgress();
+      var sizeKB = Math.round(appHTML.length / 1024);
+      toast('Portable HTML saved — ' + state.canvases.length + ' frames, ' + imgNames.length + ' images embedded (' + sizeKB + ' KB)', 'ok');
+    }catch(err){
+      console.error(err);
+      hideProgress();
+      toast('Portable export failed: ' + err.message, 'err');
+    }
+  })();
+}
+
+/* ---- Restore portable data on startup ---- */
+function restorePortable(d){
+  showProgress('Loading portable data', '');
+  return (async function(){
+    try{
+      // 1. Custom fonts
+      if(Array.isArray(d.customFonts)){
+        d.customFonts.forEach(function(f){
+          if(!f.dataB64) return;
+          try{
+            var bin = atob(f.dataB64);
+            var buf = new Uint8Array(bin.length);
+            for(var k = 0; k < bin.length; k++) buf[k] = bin.charCodeAt(k);
+            var ff = new FontFace(f.family, buf.buffer);
+            ff.load().then(function(){ document.fonts.add(ff); markDirty('all'); });
+            if(!state.customFonts.find(function(x){ return x.family === f.family; })){
+              state.customFonts.push({ name: f.name, family: f.family,
+                                       fileName: f.fileName || f.name, dataB64: f.dataB64 });
+            }
+          }catch(e){ console.warn('Font restore:', f.name, e); }
+        });
+      }
+
+      // 2. Images from embedded base64
+      state.imageCache = {};
+      if(d.imgs){
+        var imgKeys = Object.keys(d.imgs);
+        var done = 0, total = imgKeys.length;
+        await new Promise(function(resolve){
+          if(!total){ resolve(); return; }
+          imgKeys.forEach(function(name){
+            var src = d.imgs[name];
+            if(!src){ done++; if(done===total) resolve(); return; }
+            var img = new Image();
+            img.onload = img.onerror = function(){
+              state.imageCache[name] = (img.naturalWidth > 0) ? img : null;
+              done++;
+              updateProgress(done, total + 1, 'Loading images ' + done + '/' + total + '...', name);
+              if(done === total) resolve();
+            };
+            img.src = src;
+          });
+        });
+      }
+
+      // 3. Restore all state
+      updateProgress(1, 2, 'Restoring state...', '');
+      state.month   = (d.month   != null) ? d.month   : state.month;
+      state.year    = (d.year    != null) ? d.year    : state.year;
+      state.zoom    = (d.zoom    != null) ? d.zoom    : state.zoom;
+      state.csvRows = Array.isArray(d.csvRows) ? d.csvRows : state.csvRows;
+      state.canvases = d.canvases.map(function(c){
+        return {
+          day:      c.day,
+          month:    c.month,
+          year:     c.year,
+          data:     c.data     || {},
+          layers:   (c.layers  || []).map(sanitizeLayer),
+          comments: c.comments || [],
+          favorite: !!c.favorite,
+          starred:  !!c.starred,
+          approved: !!c.approved
+        };
+      });
+      state.selCanvas = (d.selCanvas != null && d.selCanvas >= 0 && d.selCanvas < state.canvases.length)
+                        ? d.selCanvas : 0;
+      var maxL = state.canvases[state.selCanvas]
+                 ? state.canvases[state.selCanvas].layers.length - 1 : -1;
+      state.selLayer = (d.selLayer != null && d.selLayer >= 0 && d.selLayer <= maxL)
+                       ? d.selLayer : -1;
+
+      state.history = []; state.hIndex = -1;
+      pushHistory();
+      updateProgress(2, 2, 'Rendering...', '');
+      await sleep(30);
+
+      renderAll();
+      setZoom(state.zoom);
+      renderToolbar(); // sync toolbar month/year after state is restored
+      markDirty('all');
+      // Extra RAF pass so canvas cards are in DOM before first draw attempt
+      requestAnimationFrame(function(){ markDirty('all'); });
+
+      hideProgress();
+      toast('Portable loaded — ' + state.canvases.length + ' frames ready to edit!', 'ok');
+    }catch(err){
+      console.error(err);
+      hideProgress();
+      toast('Portable load failed: ' + err.message, 'err');
+    }
+  })();
+}
+
 /* ---- Layer sanitizer: fills in missing fields so old+new JSON round-trip cleanly ---- */
 function sanitizeLayer(L){
   if(!L) return L;
@@ -4024,6 +4319,7 @@ function importJSON(file){
 }
 
 $('#exportJsonBtn').addEventListener('click', exportJSON);
+$('#exportHtmlBtn').addEventListener('click', exportPortableHTML);
 $('#importJsonBtn').addEventListener('click', function(){ $('#jsonFileInput').click(); });
 $('#jsonFileInput').addEventListener('change', function(e){
   var f = e.target.files && e.target.files[0];
@@ -4440,8 +4736,13 @@ function preloadAllFonts(){
 
 function init(){
   renderToolbar();
-  buildFrames();
-  preloadAllFonts();
+  if(window.__NIRNAY_PORTABLE__){
+    preloadAllFonts();
+    restorePortable(window.__NIRNAY_PORTABLE__);
+  } else {
+    buildFrames();
+    preloadAllFonts();
+  }
 }
 
 init();

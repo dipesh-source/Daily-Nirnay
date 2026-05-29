@@ -538,6 +538,15 @@
   .prop-color-wrap input[type=color]::-webkit-color-swatch{border:none;border-radius:3px}
   .prop-grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .prop-grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px}
+  .ps-link-btn{
+    width:24px;height:24px;padding:0;border-radius:5px;cursor:pointer;
+    background:transparent;border:1px solid rgba(99,102,241,.25);
+    color:var(--textS);font-size:11px;
+    display:inline-flex;align-items:center;justify-content:center;
+    transition:all .12s;flex-shrink:0;
+  }
+  .ps-link-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .ps-link-btn.active{background:rgba(99,102,241,.2);border-color:var(--accent);color:var(--accent);}
   .prop-num{
     height:28px;
     padding:0 6px;
@@ -1713,6 +1722,8 @@ window.__NIRNAY_CLEAN_SOURCE__ = '<!DOCTYPE html>\n' + document.documentElement.
 /* ----------------------------- Constants ------------------------------- */
 let W = 1080;
 let H = 2160;
+
+var posSizeLinkState = false; // aspect ratio lock for Position & Size panel
 
 const MONTHS_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTHS_FULL_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -3050,15 +3061,28 @@ function fontOptionsHTML(selectedId){
 }
 
 function commonPosSizeHTML(L){
+  var linked = posSizeLinkState;
+  function psrow(label, field, min, max, val){
+    return '<div class="prop-row">' +
+      '<span class="prop-label" style="width:20px;flex-shrink:0;font-weight:700">' + label + '</span>' +
+      '<div class="prop-slider-row" style="flex:1">' +
+        '<input type="range" data-f="' + field + '" min="' + min + '" max="' + max + '" value="' + val + '">' +
+        '<input type="number" class="v" min="' + min + '" max="' + max + '" value="' + val + '">' +
+      '</div>' +
+    '</div>';
+  }
   return '' +
     '<div class="prop-section">' +
-      '<div class="prop-title">Position & Size</div>' +
-      '<div class="prop-grid4">' +
-        '<div><div class="prop-label" style="width:auto">X</div><input class="prop-num" data-f="x" type="number" value="' + L.x + '"></div>' +
-        '<div><div class="prop-label" style="width:auto">Y</div><input class="prop-num" data-f="y" type="number" value="' + L.y + '"></div>' +
-        '<div><div class="prop-label" style="width:auto">W</div><input class="prop-num" data-f="w" type="number" value="' + L.w + '"></div>' +
-        '<div><div class="prop-label" style="width:auto">H</div><input class="prop-num" data-f="h" type="number" value="' + L.h + '"></div>' +
+      '<div class="prop-title" style="display:flex;justify-content:space-between;align-items:center">' +
+        '<span>Position & Size</span>' +
+        '<button class="ps-link-btn' + (linked?' active':'') + '" data-f="ps_link" title="Lock W:H aspect ratio (proportional resize)">' +
+          '<i class="fa-solid ' + (linked?'fa-link':'fa-link-slash') + '"></i>' +
+        '</button>' +
       '</div>' +
+      psrow('X', 'x', -W, W * 2, L.x) +
+      psrow('Y', 'y', -H, H * 2, L.y) +
+      psrow('W', 'w', 1, W * 2, L.w) +
+      psrow('H', 'h', 1, H * 2, L.h) +
     '</div>';
 }
 
@@ -3306,15 +3330,56 @@ function updatePropNumericInputs(){
 
 function wirePosSize(L){
   var panel = $('#propPanel');
+
+  // Aspect ratio link toggle
+  var linkBtn = panel.querySelector('[data-f="ps_link"]');
+  if(linkBtn){
+    linkBtn.addEventListener('click', function(){
+      posSizeLinkState = !posSizeLinkState;
+      linkBtn.classList.toggle('active', posSizeLinkState);
+      linkBtn.querySelector('i').className = 'fa-solid ' + (posSizeLinkState ? 'fa-link' : 'fa-link-slash');
+    });
+  }
+
   ['x','y','w','h'].forEach(function(f){
-    var el = panel.querySelector('[data-f="' + f + '"]');
-    if(!el) return;
-    el.addEventListener('input', function(e){
-      L[f] = parseInt(e.target.value, 10) || 0;
+    var range = panel.querySelector('input[type="range"][data-f="' + f + '"]');
+    if(!range) return;
+    var numV = range.parentElement.querySelector('.v');
+
+    range.addEventListener('input', function(e){
+      var val = parseInt(e.target.value, 10) || 0;
+
+      // Aspect ratio lock: only applies to W and H
+      if(posSizeLinkState && (f === 'w' || f === 'h') && L.w > 0 && L.h > 0){
+        if(f === 'w'){
+          var ratio = L.h / L.w;
+          L.w = val;
+          L.h = Math.max(1, Math.round(val * ratio));
+          if(numV) numV.value = L.w;
+          var hRange = panel.querySelector('input[type="range"][data-f="h"]');
+          var hNum = hRange && hRange.parentElement.querySelector('.v');
+          if(hRange) hRange.value = L.h;
+          if(hNum) hNum.value = L.h;
+        } else {
+          var ratio = L.w / L.h;
+          L.h = val;
+          L.w = Math.max(1, Math.round(val * ratio));
+          if(numV) numV.value = L.h;
+          var wRange = panel.querySelector('input[type="range"][data-f="w"]');
+          var wNum = wRange && wRange.parentElement.querySelector('.v');
+          if(wRange) wRange.value = L.w;
+          if(wNum) wNum.value = L.w;
+        }
+      } else {
+        L[f] = val;
+        if(numV) numV.value = val;
+      }
+
       markDirty(state.selCanvas);
       updateSelectionBox();
     });
-    el.addEventListener('change', pushHistory);
+
+    range.addEventListener('change', pushHistory);
   });
 }
 

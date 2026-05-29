@@ -1768,6 +1768,7 @@ function defaultLayersForDay(day, month, year, dayData){
       fitMode: def.fitMode || 'contain',
       bright:0, contrast:0, sat:0, hue:0,
       br: 0,
+      flipH: false, flipV: false,
       shadow: null
     };
   }
@@ -3825,6 +3826,26 @@ function imgToDataURL(img, name, maxW, maxH){
   });
 }
 
+/* ---- Layer sanitizer: fills in missing fields so old+new JSON round-trip cleanly ---- */
+function sanitizeLayer(L){
+  if(!L) return L;
+  if(L.type === 'img'){
+    if(L.flipH    === undefined) L.flipH    = false;
+    if(L.flipV    === undefined) L.flipV    = false;
+    if(L.br       === undefined) L.br       = 0;
+    if(L.bright   === undefined) L.bright   = 0;
+    if(L.contrast === undefined) L.contrast = 0;
+    if(L.sat      === undefined) L.sat      = 0;
+    if(L.hue      === undefined) L.hue      = 0;
+    if(L.fitMode  === undefined) L.fitMode  = 'contain';
+  }
+  if(L.op  === undefined) L.op  = 100;
+  if(L.bm  === undefined) L.bm  = 'source-over';
+  if(L.visible === undefined) L.visible = true;
+  if(L.locked  === undefined) L.locked  = false;
+  return L;
+}
+
 /* ----------------------------- JSON Export ----------------------------- */
 function exportJSON(){
   if(state.canvases.length === 0){ toast('No frames to export', 'warn'); return; }
@@ -3847,12 +3868,13 @@ function exportJSON(){
       await sleep(20);
 
       var payload = {
-        v: 2,
-        month: state.month,
-        year:  state.year,
-        zoom:  state.zoom,
+        v: 3,
+        month:     state.month,
+        year:      state.year,
+        zoom:      state.zoom,
         selCanvas: state.selCanvas,
-        csvRows: state.csvRows,
+        selLayer:  state.selLayer,
+        csvRows:   state.csvRows,
         customFonts: state.customFonts.map(function(f){
           return { name: f.name, family: f.family, fileName: f.fileName, dataB64: f.dataB64 || '' };
         }),
@@ -3863,7 +3885,7 @@ function exportJSON(){
             month:    c.month,
             year:     c.year,
             data:     JSON.parse(JSON.stringify(c.data || {})),
-            layers:   JSON.parse(JSON.stringify(c.layers)),
+            layers:   JSON.parse(JSON.stringify(c.layers)).map(sanitizeLayer),
             comments: JSON.parse(JSON.stringify(c.comments || [])),
             favorite: !!c.favorite,
             starred:  !!c.starred,
@@ -3964,7 +3986,7 @@ function importJSON(file){
           month:    c.month,
           year:     c.year,
           data:     c.data     || {},
-          layers:   c.layers   || [],
+          layers:   (c.layers  || []).map(sanitizeLayer),
           comments: c.comments || [],
           favorite: !!c.favorite,
           starred:  !!c.starred,
@@ -3973,7 +3995,10 @@ function importJSON(file){
       });
       state.selCanvas = (d.selCanvas != null && d.selCanvas >= 0 && d.selCanvas < state.canvases.length)
                         ? d.selCanvas : 0;
-      state.selLayer  = -1;
+      var maxLayerIdx = state.canvases[state.selCanvas]
+                        ? state.canvases[state.selCanvas].layers.length - 1 : -1;
+      state.selLayer  = (d.selLayer != null && d.selLayer >= 0 && d.selLayer <= maxLayerIdx)
+                        ? d.selLayer : -1;
 
       updateProgress(3, 4, 'Rebuilding history...', '');
       state.history = []; state.hIndex = -1;

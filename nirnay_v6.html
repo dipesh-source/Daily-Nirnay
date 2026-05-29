@@ -1839,6 +1839,7 @@ function defaultLayersForDay(day, month, year, dayData){
       src: src || '',
       fitMode: def.fitMode || 'contain',
       bright:0, contrast:0, sat:0, hue:0,
+      temp:0, vibrance:0, rgbR:0, rgbG:0, rgbB:0,
       br: 0,
       flipH: false, flipV: false,
       shadow: null
@@ -2039,8 +2040,9 @@ function drawImageLayer(ctx, L, cw, ch){
   }
 
   var drawSrc = img;
-  var needsFilter = (L.bright|0) || (L.contrast|0) || (L.sat|0) || (L.hue|0);
-  if(needsFilter){
+  var needsCssFilter = (L.bright|0) || (L.contrast|0) || (L.sat|0) || (L.hue|0);
+  var needsPixelFilter = (L.temp|0) || (L.vibrance|0) || (L.rgbR|0) || (L.rgbG|0) || (L.rgbB|0);
+  if(needsCssFilter || needsPixelFilter){
     try{
       var oc;
       if(typeof OffscreenCanvas !== 'undefined'){
@@ -2051,12 +2053,58 @@ function drawImageLayer(ctx, L, cw, ch){
         oc.height = img.naturalHeight;
       }
       var octx = oc.getContext('2d');
-      var filt = 'brightness(' + (100 + (L.bright||0)) + '%) ' +
-                 'contrast('   + (100 + (L.contrast||0)) + '%) ' +
-                 'saturate('   + (100 + (L.sat||0)) + '%) ' +
-                 'hue-rotate(' + (L.hue||0) + 'deg)';
-      octx.filter = filt;
+
+      // Pass 1: CSS filters (brightness, contrast, saturation, hue)
+      if(needsCssFilter){
+        octx.filter = 'brightness(' + (100 + (L.bright||0)) + '%) ' +
+                      'contrast('   + (100 + (L.contrast||0)) + '%) ' +
+                      'saturate('   + (100 + (L.sat||0)) + '%) ' +
+                      'hue-rotate(' + (L.hue||0) + 'deg)';
+      }
       octx.drawImage(img, 0, 0);
+      octx.filter = 'none';
+
+      // Pass 2: pixel-level filters (temperature, vibrance, RGB channels)
+      if(needsPixelFilter){
+        var pw = oc.width, ph = oc.height;
+        var id = octx.getImageData(0, 0, pw, ph);
+        var d  = id.data;
+        var temp    = (L.temp    || 0) / 100; // -1 to 1
+        var vibr    = (L.vibrance|| 0) / 100; // -1 to 1
+        var rAdj    = (L.rgbR    || 0) * 2.55; // -255 to 255
+        var gAdj    = (L.rgbG    || 0) * 2.55;
+        var bAdj    = (L.rgbB    || 0) * 2.55;
+
+        for(var p = 0; p < d.length; p += 4){
+          var r = d[p], g = d[p+1], b = d[p+2];
+
+          // Temperature: warm = +R +G -B, cool = -R -G +B
+          r = r + temp * 30;
+          g = g + temp * 10;
+          b = b - temp * 30;
+
+          // Vibrance: boost saturation of less-saturated pixels more
+          if(vibr !== 0){
+            var mx = Math.max(r, g, b);
+            var mn = Math.min(r, g, b);
+            var sat2 = mx > 0 ? (mx - mn) / mx : 0;
+            var vibrBoost = vibr * (1 - sat2);
+            var avg = (r + g + b) / 3;
+            r = avg + (r - avg) * (1 + vibrBoost);
+            g = avg + (g - avg) * (1 + vibrBoost);
+            b = avg + (b - avg) * (1 + vibrBoost);
+          }
+
+          // RGB channel offsets
+          r += rAdj; g += gAdj; b += bAdj;
+
+          d[p]   = Math.max(0, Math.min(255, r));
+          d[p+1] = Math.max(0, Math.min(255, g));
+          d[p+2] = Math.max(0, Math.min(255, b));
+        }
+        octx.putImageData(id, 0, 0);
+      }
+
       drawSrc = oc;
     }catch(e){
       drawSrc = img;
@@ -3054,41 +3102,30 @@ function imgPropsHTML(L){
         'Color Filters' +
         '<button class="reset-filters-btn" id="resetFiltersBtn" style="width:auto;padding:2px 8px;margin:0">Reset</button>' +
       '</div>' +
-      '<div class="prop-row">' +
-        '<span class="prop-label">Bright</span>' +
-        '<div class="prop-slider-row" style="flex:1">' +
-          '<input type="range" data-f="bright" min="-100" max="100" value="' + (L.bright||0) + '">' +
-          '<span class="v">' + (L.bright||0) + '</span>' +
-        '</div>' +
-      '</div>' +
-      '<div class="prop-row">' +
-        '<span class="prop-label">Contrast</span>' +
-        '<div class="prop-slider-row" style="flex:1">' +
-          '<input type="range" data-f="contrast" min="-100" max="100" value="' + (L.contrast||0) + '">' +
-          '<span class="v">' + (L.contrast||0) + '</span>' +
-        '</div>' +
-      '</div>' +
-      '<div class="prop-row">' +
-        '<span class="prop-label">Saturate</span>' +
-        '<div class="prop-slider-row" style="flex:1">' +
-          '<input type="range" data-f="sat" min="-100" max="100" value="' + (L.sat||0) + '">' +
-          '<span class="v">' + (L.sat||0) + '</span>' +
-        '</div>' +
-      '</div>' +
-      '<div class="prop-row">' +
-        '<span class="prop-label">Hue</span>' +
-        '<div class="prop-slider-row" style="flex:1">' +
-          '<input type="range" data-f="hue" min="-180" max="180" value="' + (L.hue||0) + '">' +
-          '<span class="v">' + (L.hue||0) + '</span>' +
-        '</div>' +
-      '</div>' +
-      '<div class="prop-row">' +
-        '<span class="prop-label">Opacity</span>' +
-        '<div class="prop-slider-row" style="flex:1">' +
-          '<input type="range" data-f="layerOp" min="0" max="100" value="' + (L.op != null ? L.op : 100) + '">' +
-          '<span class="v">' + (L.op != null ? L.op : 100) + '</span>' +
-        '</div>' +
-      '</div>' +
+      (function(){
+        function row(label, field, min, max, val){
+          return '<div class="prop-row">' +
+            '<span class="prop-label">' + label + '</span>' +
+            '<div class="prop-slider-row" style="flex:1">' +
+              '<input type="range" data-f="' + field + '" min="' + min + '" max="' + max + '" value="' + (val||0) + '">' +
+              '<span class="v">' + (val||0) + '</span>' +
+            '</div>' +
+          '</div>';
+        }
+        return row('Brightness','bright',-100,100,L.bright) +
+               row('Contrast','contrast',-100,100,L.contrast) +
+               row('Saturation','sat',-100,100,L.sat) +
+               row('Hue','hue',-180,180,L.hue) +
+               row('Temperature','temp',-100,100,L.temp) +
+               row('Vibrance','vibrance',-100,100,L.vibrance) +
+               '<div class="prop-row"><span class="prop-label" style="color:#f87171;font-weight:600">R</span>' +
+               '<div class="prop-slider-row" style="flex:1"><input type="range" data-f="rgbR" min="-100" max="100" value="' + (L.rgbR||0) + '"><span class="v">' + (L.rgbR||0) + '</span></div></div>' +
+               '<div class="prop-row"><span class="prop-label" style="color:#34d399;font-weight:600">G</span>' +
+               '<div class="prop-slider-row" style="flex:1"><input type="range" data-f="rgbG" min="-100" max="100" value="' + (L.rgbG||0) + '"><span class="v">' + (L.rgbG||0) + '</span></div></div>' +
+               '<div class="prop-row"><span class="prop-label" style="color:#60a5fa;font-weight:600">B</span>' +
+               '<div class="prop-slider-row" style="flex:1"><input type="range" data-f="rgbB" min="-100" max="100" value="' + (L.rgbB||0) + '"><span class="v">' + (L.rgbB||0) + '</span></div></div>' +
+               row('Opacity','layerOp',0,100,L.op != null ? L.op : 100);
+      }()) +
     '</div>' +
     shadowHTML(L);
 }
@@ -3414,7 +3451,7 @@ function wireImgProps(L){
   }
 
   // ── Color filters ──
-  ['bright','contrast','sat','hue'].forEach(function(f){
+  ['bright','contrast','sat','hue','temp','vibrance','rgbR','rgbG','rgbB'].forEach(function(f){
     var el = panel.querySelector('[data-f="' + f + '"]');
     if(!el) return;
     el.addEventListener('input', function(e){
@@ -3447,10 +3484,10 @@ function wireImgProps(L){
   var resetBtn = $('#resetFiltersBtn');
   if(resetBtn){
     resetBtn.addEventListener('click', function(){
-      L.bright = 0; L.contrast = 0; L.sat = 0; L.hue = 0;
-      ['bright','contrast','sat','hue'].forEach(function(f){
+      ['bright','contrast','sat','hue','temp','vibrance','rgbR','rgbG','rgbB'].forEach(function(f){
+        L[f] = 0;
         var el = panel.querySelector('[data-f="' + f + '"]');
-        if(el){ el.value = 0; el.parentElement.querySelector('.v').textContent = 0; }
+        if(el){ el.value = 0; var v = el.parentElement.querySelector('.v'); if(v) v.textContent = 0; }
       });
       markDirty(state.selCanvas);
       pushHistory();
@@ -4163,6 +4200,11 @@ function sanitizeLayer(L){
     if(L.contrast === undefined) L.contrast = 0;
     if(L.sat      === undefined) L.sat      = 0;
     if(L.hue      === undefined) L.hue      = 0;
+    if(L.temp     === undefined) L.temp     = 0;
+    if(L.vibrance === undefined) L.vibrance = 0;
+    if(L.rgbR     === undefined) L.rgbR     = 0;
+    if(L.rgbG     === undefined) L.rgbG     = 0;
+    if(L.rgbB     === undefined) L.rgbB     = 0;
     if(L.fitMode  === undefined) L.fitMode  = 'contain';
   }
   if(L.op  === undefined) L.op  = 100;

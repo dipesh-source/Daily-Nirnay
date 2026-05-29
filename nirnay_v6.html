@@ -286,6 +286,46 @@
   }
   .zoom-pct:hover{background:rgba(99,102,241,.15);color:var(--accent)}
 
+  /* Frame size control */
+  .frame-size-ctrl{
+    display:flex;align-items:center;gap:5px;
+    background:rgba(99,102,241,.08);
+    border:1px solid rgba(99,102,241,.22);
+    border-radius:8px;padding:3px 8px;
+    flex-shrink:0;
+  }
+  .frame-size-ctrl .fs-lbl{
+    font-size:10px;color:var(--textS);font-weight:600;letter-spacing:.4px;
+  }
+  .frame-size-ctrl input[type=number]{
+    width:52px;height:24px;
+    background:rgba(99,102,241,.12);
+    border:1px solid rgba(99,102,241,.28);
+    border-radius:5px;color:var(--textP);
+    font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;
+    text-align:center;padding:0 4px;
+    -moz-appearance:textfield;appearance:textfield;outline:none;
+    transition:border-color .12s;
+  }
+  .frame-size-ctrl input[type=number]::-webkit-inner-spin-button,
+  .frame-size-ctrl input[type=number]::-webkit-outer-spin-button{ opacity:0;width:0; }
+  .frame-size-ctrl input[type=number]:focus{ border-color:var(--accent); }
+  .frame-size-ctrl .fs-x{
+    font-size:10px;color:var(--textS);
+  }
+  .frame-size-ctrl button{
+    height:24px;padding:0 8px;
+    background:linear-gradient(135deg,rgba(99,102,241,.3),rgba(168,85,247,.25));
+    border:1px solid rgba(99,102,241,.4);
+    border-radius:5px;color:#a5b4fc;
+    font-size:10px;font-weight:700;letter-spacing:.3px;
+    cursor:pointer;transition:all .12s;white-space:nowrap;
+  }
+  .frame-size-ctrl button:hover{
+    background:linear-gradient(135deg,rgba(99,102,241,.5),rgba(168,85,247,.4));
+    color:#c4b5fd;border-color:rgba(99,102,241,.6);
+  }
+
   /* ---------- Main layout ---------- */
   .main{
     display:flex;
@@ -1414,6 +1454,18 @@
       <div class="zoom-pct" id="zoomPct" title="Reset View (Ctrl+0)" style="cursor:pointer" id="zoomPctBtn">20%</div>
     </div>
 
+    <div class="tb-sep"></div>
+
+    <!-- Frame Size -->
+    <div class="frame-size-ctrl" title="Frame canvas size — click Apply to resize all frames">
+      <span class="fs-lbl">W:</span>
+      <input type="number" id="frameSizeW" min="100" max="4000" value="1080" title="Frame width in pixels">
+      <span class="fs-x">×</span>
+      <span class="fs-lbl">H:</span>
+      <input type="number" id="frameSizeH" min="100" max="8000" value="2160" title="Frame height in pixels">
+      <button id="frameSizeApply" title="Apply new frame size to all canvases">Apply</button>
+    </div>
+
     <div class="tb-spacer"></div>
 
     <!-- History -->
@@ -1659,8 +1711,8 @@ window.__NIRNAY_CLEAN_SOURCE__ = '<!DOCTYPE html>\n' + document.documentElement.
 'use strict';
 
 /* ----------------------------- Constants ------------------------------- */
-const W = 1080;
-const H = 2160;
+let W = 1080;
+let H = 2160;
 
 const MONTHS_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTHS_FULL_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -1706,6 +1758,8 @@ const BUILTIN_FONTS = [
 const state = {
   month: new Date().getMonth(),
   year:  new Date().getFullYear(),
+  frameW: 1080,                    // canvas frame width (px)
+  frameH: 2160,                    // canvas frame height (px)
   zoom:  20,                       // workspace zoom %
   panX:  0,                        // viewport pan X (px)
   panY:  0,                        // viewport pan Y (px)
@@ -4080,6 +4134,8 @@ function exportPortableHTML(){
         v: 3,
         month:     state.month,
         year:      state.year,
+        frameW:    state.frameW || W,
+        frameH:    state.frameH || H,
         zoom:      state.zoom,
         selCanvas: state.selCanvas,
         selLayer:  state.selLayer,
@@ -4188,6 +4244,12 @@ function restorePortable(d){
       updateProgress(1, 2, 'Restoring state...', '');
       state.month   = (d.month   != null) ? d.month   : state.month;
       state.year    = (d.year    != null) ? d.year    : state.year;
+      if(d.frameW && d.frameH){
+        W = d.frameW; H = d.frameH;
+        state.frameW = d.frameW; state.frameH = d.frameH;
+        $('#frameSizeW').value = d.frameW;
+        $('#frameSizeH').value = d.frameH;
+      }
       state.zoom    = (d.zoom    != null) ? d.zoom    : state.zoom;
       state.csvRows = Array.isArray(d.csvRows) ? d.csvRows : state.csvRows;
       state.canvases = d.canvases.map(function(c){
@@ -4282,6 +4344,8 @@ function exportJSON(){
         v: 3,
         month:     state.month,
         year:      state.year,
+        frameW:    state.frameW || W,
+        frameH:    state.frameH || H,
         zoom:      state.zoom,
         selCanvas: state.selCanvas,
         selLayer:  state.selLayer,
@@ -4389,6 +4453,12 @@ function importJSON(file){
       // Restore canvases & settings
       state.month    = (d.month    != null) ? d.month    : state.month;
       state.year     = (d.year     != null) ? d.year     : state.year;
+      if(d.frameW && d.frameH){
+        W = d.frameW; H = d.frameH;
+        state.frameW = d.frameW; state.frameH = d.frameH;
+        $('#frameSizeW').value = d.frameW;
+        $('#frameSizeH').value = d.frameH;
+      }
       state.zoom     = (d.zoom     != null) ? d.zoom     : state.zoom;
       state.csvRows  = Array.isArray(d.csvRows) ? d.csvRows : state.csvRows;
       state.canvases = d.canvases.map(function(c){
@@ -4543,6 +4613,54 @@ $('#monthSel').addEventListener('change', function(e){
 $('#yearSel').addEventListener('change', function(e){
   state.year = parseInt(e.target.value, 10);
   buildFrames();
+});
+
+/* ----------------------------- Frame Size ------------------------------ */
+function applyFrameSize(){
+  var newW = parseInt($('#frameSizeW').value, 10);
+  var newH = parseInt($('#frameSizeH').value, 10);
+  newW = Math.max(100, Math.min(4000, newW || 1080));
+  newH = Math.max(100, Math.min(8000, newH || 2160));
+
+  if(newW === W && newH === H){
+    toast('Frame size is already ' + W + '×' + H, 'ok');
+    return;
+  }
+
+  // Update module-level dimensions and state
+  W = newW;
+  H = newH;
+  state.frameW = newW;
+  state.frameH = newH;
+
+  // Sync inputs back (in case values were clamped)
+  $('#frameSizeW').value = newW;
+  $('#frameSizeH').value = newH;
+
+  // Resize every canvas element in the grid
+  $$('#canvasGrid canvas').forEach(function(cv){
+    cv.width  = newW;
+    cv.height = newH;
+  });
+
+  // Update card widths and zoom
+  setZoom(state.zoom);
+
+  // Re-render all frames with new dimensions
+  markDirty('all');
+
+  toast('Frame size set to ' + newW + '×' + newH + ' — all frames resized.', 'ok');
+}
+
+$('#frameSizeApply').addEventListener('click', function(){
+  applyFrameSize();
+});
+
+// Allow pressing Enter in either input to apply
+['frameSizeW','frameSizeH'].forEach(function(id){
+  $('#' + id).addEventListener('keydown', function(e){
+    if(e.key === 'Enter') applyFrameSize();
+  });
 });
 
 /* ----------------------------- Zoom & Pan (Figma-like) ------------------ */

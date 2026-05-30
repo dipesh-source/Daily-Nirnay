@@ -2046,6 +2046,33 @@ function defaultLayersForDay(day, month, year, dayData){
   ];
 }
 
+/* ── Font display-number → internal ID mapping ─────────────────────────── *
+ * The dropdown shows sequential numbers [1][2][3]... in this order:
+ *   Bundled fonts first, then built-in Gujarati (1-10), Devanagari (11-15),
+ *   Latin (16-30), then custom uploaded fonts.
+ * Users enter these display numbers in the CSV t*_font_id columns.
+ * ────────────────────────────────────────────────────────────────────────── */
+function fontDisplayMap(){
+  var map = [null]; // map[0] unused; map[1] = first displayed font's internal ID
+  var bundled = state.customFonts.filter(function(f){ return f.bundled; });
+  var custom  = state.customFonts.filter(function(f){ return !f.bundled; });
+  bundled.forEach(function(f){ map.push(31 + state.customFonts.indexOf(f)); });
+  for(var i = 1; i <= 30; i++) map.push(i);
+  custom.forEach(function(f){ map.push(31 + state.customFonts.indexOf(f)); });
+  return map;
+}
+
+/* Convert a CSV font value (display number 1,2,3...) to internal font ID.
+ * Falls back to the raw value if it's beyond the display map (backward compat
+ * for CSVs that already stored raw internal IDs like 33, 34). */
+function csvFontId(s){
+  var n = parseInt(s, 10);
+  if(!n || n < 1) return 1;
+  var map = fontDisplayMap();
+  if(n < map.length) return map[n]; // display number → internal ID
+  return n;                          // raw internal ID (legacy CSV values)
+}
+
 /* ----------------------------- CSV Row to DayData ---------------------- */
 function rowToDayData(row){
   function g(i){ return (row[i] !== undefined ? row[i] : '').toString(); }
@@ -2068,14 +2095,14 @@ function rowToDayData(row){
   var date = parseInt(g(0), 10);
   return {
     date: date,
-    t1_text:    textClean(g(1)),  t1_font_id: g(2),  t1_color: g(3),
-    t2_text:    textClean(g(4)),  t2_font_id: g(5),  t2_color: g(6),
-    t3_text:    textClean(g(7)),  t3_font_id: g(8),  t3_color: g(9),
-    t4_text:    textClean(g(10)), t4_font_id: g(11), t4_color: g(12),
-    t5_text:    textClean(g(13)), t5_font_id: g(14), t5_color: g(15),
-    t6_text:    textClean(g(16)), t6_font_id: g(17), t6_color: g(18),
-    t7_text:    textClean(g(19)), t7_font_id: g(20), t7_color: g(21),
-    t8_text:    textClean(g(22)), t8_font_id: g(23), t8_color: g(24),
+    t1_text:    textClean(g(1)),  t1_font_id: csvFontId(g(2)),  t1_color: g(3),
+    t2_text:    textClean(g(4)),  t2_font_id: csvFontId(g(5)),  t2_color: g(6),
+    t3_text:    textClean(g(7)),  t3_font_id: csvFontId(g(8)),  t3_color: g(9),
+    t4_text:    textClean(g(10)), t4_font_id: csvFontId(g(11)), t4_color: g(12),
+    t5_text:    textClean(g(13)), t5_font_id: csvFontId(g(14)), t5_color: g(15),
+    t6_text:    textClean(g(16)), t6_font_id: csvFontId(g(17)), t6_color: g(18),
+    t7_text:    textClean(g(19)), t7_font_id: csvFontId(g(20)), t7_color: g(21),
+    t8_text:    textClean(g(22)), t8_font_id: csvFontId(g(23)), t8_color: g(24),
     img_ns:     imgClean(g(25)),
     img_logo:   imgClean(g(26)),
     img_frame:  imgClean(g(27)),

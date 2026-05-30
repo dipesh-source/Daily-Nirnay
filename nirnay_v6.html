@@ -802,7 +802,7 @@
   /* ---------- Workspace ---------- */
   .workspace{
     flex:1;
-    overflow:hidden;
+    overflow:auto;
     background-color:var(--bg0);
     background-image: radial-gradient(circle, rgba(99,102,241,.18) 1px, transparent 1px);
     background-size: 28px 28px;
@@ -810,16 +810,15 @@
     cursor:default;
     user-select:none;
     -webkit-user-select:none;
+    scroll-behavior:smooth;
   }
   .workspace.ws-panning{ cursor:grab; }
   .workspace.ws-panning:active{ cursor:grabbing; }
-  /* Viewport — the transformable inner layer */
+  /* Viewport — normal flow wrapper */
   .ws-viewport{
-    position:absolute;
-    top:0; left:0;
-    transform-origin: 0 0;
-    will-change: transform;
-    min-width: 100%;
+    position:relative;
+    width:100%;
+    min-height:100%;
   }
   .empty-state{
     position:absolute;
@@ -848,10 +847,12 @@
 
   .canvas-grid{
     display:grid;
-    grid-template-columns: repeat(4, var(--card-w, 216px));
+    /* auto-fill: fits as many columns as the viewport allows at current zoom */
+    grid-template-columns: repeat(auto-fill, var(--card-w, 216px));
     gap:40px 32px;
     align-items:start;
     padding:40px 40px 160px 40px;
+    justify-content:center;
   }
   /* Wrapper holds card + action strip below */
   .canvas-card-wrap{
@@ -4894,17 +4895,9 @@ function updateZoomSliderFill(){
   slider.style.setProperty('--zoom-pct', pct.toFixed(1) + '%');
 }
 
-function setZoom(z, originX, originY){
-  var oldZoom = state.zoom;
+function setZoom(z){
   var newZoom = clamp(Math.round(z), 5, 200);
-  if(newZoom === oldZoom) return;
-
-  // Zoom toward origin point (cursor) by adjusting pan
-  if(originX != null && originY != null){
-    var ratio = newZoom / oldZoom;
-    state.panX = Math.round(originX - ratio * (originX - state.panX));
-    state.panY = Math.round(originY - ratio * (originY - state.panY));
-  }
+  if(newZoom === state.zoom) return;
 
   state.zoom = newZoom;
   $('#zoomSlider').value = newZoom;
@@ -4919,11 +4912,11 @@ function setZoom(z, originX, originY){
     var actionScale = Math.min(1, cardW / 240);
     grid.style.setProperty('--action-scale', actionScale.toFixed(3));
     grid.classList.toggle('zoom-tiny', newZoom < 15);
-    $$('.canvas-card-wrap').forEach(function(el){ el.style.width = cardW + 'px'; });
+    // card-wrap widths are driven by --card-w CSS var; no per-element override needed
   }
 
-  applyViewport();
   updateSelectionBox();
+  saveState();
 }
 
 function setPan(x, y){
@@ -4932,24 +4925,17 @@ function setPan(x, y){
   applyViewport();
 }
 
-// ── Wheel: scroll = pan, Ctrl/Cmd+wheel = zoom ──
+// ── Wheel: Ctrl/Cmd+wheel = zoom, plain wheel = scroll (handled by browser on overflow:auto) ──
 $('#workspace').addEventListener('wheel', function(e){
-  e.preventDefault();
   if(e.ctrlKey || e.metaKey){
-    var ws = $('#workspace');
-    var rect = ws.getBoundingClientRect();
-    var cx = e.clientX - rect.left;
-    var cy = e.clientY - rect.top;
+    e.preventDefault();
     var delta = e.deltaY < 0 ? 1 : -1;
     var step = Math.max(1, Math.round(state.zoom * 0.07));
-    setZoom(state.zoom + delta * step, cx, cy);
-  } else {
-    var mult = e.deltaMode === 1 ? 20 : 1; // LINE mode
-    var dx = e.shiftKey ? e.deltaY * mult : e.deltaX * mult;
-    var dy = e.shiftKey ? 0 : e.deltaY * mult;
-    setPan(state.panX - dx, state.panY - dy);
+    setZoom(state.zoom + delta * step);
   }
+  // plain scroll: let the browser scroll the overflow:auto workspace naturally
 }, { passive: false });
+
 
 // ── Pan: Space+drag, Middle-drag, or plain left-drag on empty workspace ──
 (function(){

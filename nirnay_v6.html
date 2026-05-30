@@ -3197,8 +3197,8 @@ function commonPosSizeHTML(L){
     return '<div class="prop-row">' +
       '<span class="prop-label" style="width:20px;flex-shrink:0;font-weight:700">' + label + '</span>' +
       '<div class="prop-slider-row" style="flex:1">' +
-        '<input type="range" data-f="' + field + '" min="' + min + '" max="' + max + '" value="' + val + '">' +
-        '<input type="number" class="v" min="' + min + '" max="' + max + '" value="' + val + '">' +
+        '<input type="range" data-f="' + field + '" min="' + min + '" max="' + max + '" value="' + Math.min(Math.max(val, min), max) + '">' +
+        '<input type="number" class="v" min="' + min + '" value="' + val + '">' +
       '</div>' +
     '</div>';
   }
@@ -3210,10 +3210,10 @@ function commonPosSizeHTML(L){
           '<i class="fa-solid ' + (linked?'fa-link':'fa-link-slash') + '"></i>' +
         '</button>' +
       '</div>' +
-      psrow('X', 'x', -W, W * 2, L.x) +
-      psrow('Y', 'y', -H, H * 2, L.y) +
-      psrow('W', 'w', 1, W * 2, L.w) +
-      psrow('H', 'h', 1, H * 2, L.h) +
+      psrow('X', 'x', -5000, 5000, L.x) +
+      psrow('Y', 'y', -5000, 5000, L.y) +
+      psrow('W', 'w', 1, 5000, L.w) +
+      psrow('H', 'h', 1, 5000, L.h) +
     '</div>';
 }
 

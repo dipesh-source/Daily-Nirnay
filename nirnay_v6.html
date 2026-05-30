@@ -3157,35 +3157,35 @@ function loadFontThenDirty(fontId, fs, canvasIdx){
 
 function fontOptionsHTML(selectedId){
   var opts = [];
-  // Bundled fonts first (always at the top)
+  var n = 0; // sequential display counter, starts at 1 for first font shown
+  function fopt(id, name){
+    n++;
+    var pad = n < 10 ? ' ' + n : '' + n;
+    return '<option value="' + id + '" ' + (id==selectedId?'selected':'') + '>[' + pad + '] ' + escapeHTML(name) + '</option>';
+  }
+  // Bundled fonts first → get display numbers 1, 2, ...
   var bundled = state.customFonts.filter(function(f){ return f.bundled; });
   var custom  = state.customFonts.filter(function(f){ return !f.bundled; });
   if(bundled.length > 0){
     opts.push('<optgroup label="── Bundled Fonts ──">');
     bundled.forEach(function(f){
       var id = 31 + state.customFonts.indexOf(f);
-      opts.push('<option value="' + id + '" ' + (id==selectedId?'selected':'') + '>' + escapeHTML(f.name) + '</option>');
+      opts.push(fopt(id, f.name));
     });
     opts.push('</optgroup>');
   }
   opts.push('<optgroup label="── Gujarati / Devanagari ──">');
-  for(var i = 1; i <= 10; i++){
-    opts.push('<option value="' + i + '" ' + (i==selectedId?'selected':'') + '>' + BUILTIN_FONTS[i] + '</option>');
-  }
+  for(var i = 1; i <= 10; i++) opts.push(fopt(i, BUILTIN_FONTS[i]));
   opts.push('</optgroup><optgroup label="── Devanagari / Hindi ──">');
-  for(var i = 11; i <= 15; i++){
-    opts.push('<option value="' + i + '" ' + (i==selectedId?'selected':'') + '>' + BUILTIN_FONTS[i] + '</option>');
-  }
+  for(var i = 11; i <= 15; i++) opts.push(fopt(i, BUILTIN_FONTS[i]));
   opts.push('</optgroup><optgroup label="── Latin / English ──">');
-  for(var i = 16; i <= 30; i++){
-    opts.push('<option value="' + i + '" ' + (i==selectedId?'selected':'') + '>' + BUILTIN_FONTS[i] + '</option>');
-  }
+  for(var i = 16; i <= 30; i++) opts.push(fopt(i, BUILTIN_FONTS[i]));
   opts.push('</optgroup>');
   if(custom.length > 0){
     opts.push('<optgroup label="── Custom Fonts ──">');
     custom.forEach(function(f){
       var id = 31 + state.customFonts.indexOf(f);
-      opts.push('<option value="' + id + '" ' + (id==selectedId?'selected':'') + '>' + escapeHTML(f.name) + '</option>');
+      opts.push(fopt(id, f.name));
     });
     opts.push('</optgroup>');
   }
